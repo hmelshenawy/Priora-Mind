@@ -42,6 +42,20 @@
 
 [Gates determined based on constitution file]
 
+## Reference Alignment
+
+<!--
+  ACTION REQUIRED: Per the Priora Mind Constitution, every implementation plan
+  MUST include a Reference Alignment section explaining alignment with the
+  authoritative reference documents: PRD.md, SAD.md, Frontend_Architecture.md.
+  Resolve any conflict, ambiguity, or gap explicitly BEFORE implementation.
+-->
+
+- **PRD.md**: [Alignment with product requirements, scope, user journeys, and business rules]
+- **SAD.md**: [Alignment with backend architecture, system boundaries, data flow, security, safety, and integration decisions]
+- **Frontend_Architecture.md**: [Alignment with frontend structure, routes, state management, UI patterns, RTL, accessibility, and frontend conventions]
+- **Conflicts / Gaps**: [Any conflict, ambiguity, or missing decision across the documents, and how it is resolved — or "None"]
+
 ## Project Structure
 
 ### Documentation (this feature)

@@ -34,7 +34,7 @@ interface UserAccountRow {
 interface VerificationTokenRow {
   id: string;
   userId: string;
-  tokenHash: Buffer;
+  tokenHash: Uint8Array;
   expiresAt: Date;
   consumedAt: Date | null;
   createdAt: Date;
@@ -42,7 +42,7 @@ interface VerificationTokenRow {
 interface RefreshTokenRow {
   id: string;
   userId: string;
-  tokenHash: Buffer;
+  tokenHash: Uint8Array;
   expiresAt: Date;
   revokedAt: Date | null;
   createdAt: Date;
@@ -183,8 +183,8 @@ type WhereUser = Partial<Pick<UserAccountRow, 'email' | 'status' | 'deletedAt'>>
   lastActivityAt?: { lt: Date };
   id?: string | { in: string[] };
 };
-type WhereToken = { userId?: string; tokenHash?: Buffer; consumedAt?: null };
-type WhereRefresh = { tokenHash?: Buffer; userId?: string };
+type WhereToken = { userId?: string; tokenHash?: Uint8Array; consumedAt?: null };
+type WhereRefresh = { tokenHash?: Uint8Array; userId?: string };
 type WhereNotice = { isActive?: boolean };
 type WhereConsent = {
   userId?: string | { in: string[] };
@@ -211,8 +211,11 @@ type WhereSafetyEvaluation = {
 };
 type OrderByEvaluatedAt = { evaluatedAt: 'desc' | 'asc' };
 
-function bufEq(a: Buffer, b: Buffer): boolean {
-  return a.length === b.length && a.equals(b);
+function bufEq(a: Uint8Array, b: Uint8Array): boolean {
+  if (a.length !== b.length) return false;
+  let diff = 0;
+  for (let i = 0; i < a.length; i++) diff |= a[i] ^ b[i];
+  return diff === 0;
 }
 
 /** Match a `where.id` that may be a literal or `{ in: [...] }` (Prisma both shapes). */
@@ -344,7 +347,7 @@ export class InMemoryPrisma {
       this.vtokens.set(row.id, row);
       return { ...row };
     },
-    findFirst: ({ where }: { where: { userId: string; tokenHash: Buffer } }): VerificationTokenRow | null => {
+    findFirst: ({ where }: { where: { userId: string; tokenHash: Uint8Array } }): VerificationTokenRow | null => {
       for (const row of this.vtokens.values()) {
         if (row.userId !== where.userId) continue;
         if (!bufEq(row.tokenHash, where.tokenHash)) continue;

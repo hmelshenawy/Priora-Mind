@@ -239,6 +239,35 @@ describe('Profile + onboarding contract (US3)', () => {
     expect(res.body.error.code).toBe('VALIDATION');
   });
 
+  it('PUT /me/preferences/language before the profile step creates a preferences row with no timezone; putProfile later sets it (FR-009/FR-011)', async () => {
+    const token = await verifiedAccessToken();
+    await grantConsent(token);
+
+    // Language switch at the profile step, before the profile form is submitted. No
+    // default timezone is invented (FR-009); the field stays nullable until putProfile.
+    const res = await agent
+      .put(`${ME}/preferences/language`)
+      .set(auth(token))
+      .send({ language_code: 'ar' });
+    expect(res.status).toBe(200);
+    expect(res.body.language_code).toBe('ar');
+
+    // The preferences row exists with the language set and timezone unset (nullable).
+    expect(prisma.preferencesStore.size).toBe(1);
+    const prefs = [...prisma.preferencesStore.values()][0];
+    expect(prefs.languageCode).toBe('ar');
+    expect(prefs.timezone).toBeNull();
+
+    // Completing the profile step later sets the validated timezone (FR-009).
+    const saved = await agent
+      .put(`${ONB}/profile`)
+      .set(auth(token))
+      .send(profileBody('ar', 'Asia/Dubai'));
+    expect(saved.status).toBe(200);
+    expect(saved.body.preferences.timezone).toBe('Asia/Dubai');
+    expect([...prisma.preferencesStore.values()][0].timezone).toBe('Asia/Dubai');
+  });
+
   // ── onboarding state ────────────────────────────────────────────
 
   it('GET /onboarding/state after consent (before profile) routes to /onboarding/profile', async () => {

@@ -1,6 +1,8 @@
 import { describe, it, expect } from 'vitest';
+import { createHash } from 'node:crypto';
 import { FakeEmailAdapter } from '../../src/modules/auth/ports/fake-email.adapter';
 import { generateToken, hashToken, sameHash } from '../../src/modules/auth/tokens/token-hash';
+import { InMemoryPrisma } from '../helpers/in-memory-prisma';
 
 /**
  * T018 — FakeEmailAdapter capture + verification-token hashing (research D2).
@@ -32,7 +34,10 @@ describe('verification token hashing', () => {
     const { raw, hash } = generateToken();
     expect(raw).toMatch(/^[0-9a-f]{64}$/);
     expect(hash.length).toBe(32); // sha256 = 32 bytes
-    expect(hashToken(raw).equals(hash)).toBe(true);
+    expect(sameHash(hashToken(raw), hash)).toBe(true);
+    // The hash is a real Uint8Array (Prisma Bytes-compatible), not a Node Buffer.
+    expect(hash).toBeInstanceOf(Uint8Array);
+    expect(hash.buffer).toBeInstanceOf(ArrayBuffer);
   });
 
   it('distinct raw tokens produce distinct hashes', () => {
@@ -44,6 +49,45 @@ describe('verification token hashing', () => {
 
   it('hashToken is deterministic — same raw → same hash', () => {
     const raw = 'abc123';
-    expect(hashToken(raw).equals(hashToken(raw))).toBe(true);
+    expect(sameHash(hashToken(raw), hashToken(raw))).toBe(true);
+  });
+
+  it('hashToken contains exactly the SHA-256 bytes of the raw token', () => {
+    const raw = 'verify-me-please';
+    // Independent SHA-256 computed straight from node:crypto.
+    const expected = Uint8Array.from(createHash('sha256').update(raw).digest());
+    const actual = hashToken(raw);
+    // Same 32 bytes, byte-for-byte.
+    expect(actual.length).toBe(32);
+    expect(sameHash(actual, expected)).toBe(true);
+  });
+
+  it('a generated hash works in Prisma create + query operations (Bytes round-trip)', () => {
+    const prisma = new InMemoryPrisma();
+    const userId = 'user-bytes-rt';
+    const raw = 'round-trip-token';
+    const hash = hashToken(raw);
+
+    // Create persists the hash as a Prisma Bytes value.
+    prisma.verificationToken.create({
+      data: { userId, tokenHash: hash, expiresAt: new Date(Date.now() + 60_000) },
+    });
+
+    // A different raw token hashes to a different value and must NOT match.
+    expect(
+      prisma.verificationToken.findFirst({
+        where: { userId, tokenHash: hashToken('not-the-same-token') },
+      }),
+    ).toBeNull();
+
+    // The stored row is found by the exact hash (the lookup used by verifyEmail).
+    const stored = prisma.verificationToken.findFirst({
+      where: { userId, tokenHash: hashToken(raw) },
+    });
+    expect(stored).not.toBeNull();
+    expect(stored!.userId).toBe(userId);
+    expect(sameHash(stored!.tokenHash, hash)).toBe(true);
+    // The stored hash is still the SHA-256 of the raw token.
+    expect(sameHash(stored!.tokenHash, Uint8Array.from(createHash('sha256').update(raw).digest()))).toBe(true);
   });
 });

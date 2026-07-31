@@ -12,7 +12,7 @@ import { AllExceptionsFilter } from '../../src/common/filters/all-exceptions.fil
 import { AuthModule } from '../../src/modules/auth/auth.module';
 import { EMAIL_PORT } from '../../src/modules/auth/ports/email.port';
 import { FakeEmailAdapter } from '../../src/modules/auth/ports/fake-email.adapter';
-import { hashToken } from '../../src/modules/auth/tokens/token-hash';
+import { hashToken, sameHash } from '../../src/modules/auth/tokens/token-hash';
 import { InMemoryPrisma } from '../helpers/in-memory-prisma';
 
 /**
@@ -92,7 +92,7 @@ describe('Auth contract (US1)', () => {
     });
     expect(stored).not.toBeNull();
     // The hash is NOT the raw token.
-    expect(stored!.tokenHash.equals(Buffer.from(captured.token))).toBe(false);
+    expect(sameHash(stored!.tokenHash, Buffer.from(captured.token))).toBe(false);
     expect(stored!.consumedAt).toBeNull();
   });
 

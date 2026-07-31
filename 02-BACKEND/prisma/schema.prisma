@@ -22,7 +22,7 @@ generator client {
   // wrapper re-exports `.prisma/client/default`, resolved up the node_modules
   // tree). Generating there keeps the loaded client in sync with this schema;
   // `../node_modules/.prisma/client` would write inside 02-BACKEND and go unused.
-  output = "../../node_modules/.prisma/client"
+  output   = "../../node_modules/.prisma/client"
 }
 
 datasource db {
@@ -45,12 +45,12 @@ enum AccountStatus {
 /// allows a deleted email to be re-registered. `passwordHash` is never selected
 /// into responses/logs. Anti-enumeration: existence is never disclosed (FR-004).
 model UserAccount {
-  id             String       @id @default(uuid())
+  id             String        @id @default(uuid())
   email          String
   passwordHash   String
   status         AccountStatus
-  createdAt      DateTime     @default(now())
-  lastActivityAt DateTime     @default(now())
+  createdAt      DateTime      @default(now())
+  lastActivityAt DateTime      @default(now())
   deletedAt      DateTime?
 
   verificationTokens VerificationToken[]
@@ -86,12 +86,12 @@ model VerificationToken {
 /// Rotating refresh token (data-model §3, SAD §13). The hash is stored; the raw
 /// token is the HttpOnly cookie value. Rotation revokes the prior row.
 model RefreshToken {
-  id         String    @id @default(uuid())
-  userId     String
-  tokenHash  Bytes
-  expiresAt  DateTime
-  revokedAt  DateTime?
-  createdAt  DateTime  @default(now())
+  id        String    @id @default(uuid())
+  userId    String
+  tokenHash Bytes
+  expiresAt DateTime
+  revokedAt DateTime?
+  createdAt DateTime  @default(now())
 
   user UserAccount @relation(fields: [userId], references: [id], onDelete: Cascade)
 
@@ -173,13 +173,17 @@ model Profile {
 }
 
 /// 1:1 user preferences (data-model §6). `languageCode` drives RTL/LTR +
-/// localization (FR-010); `timezone` is a validated IANA name (FR-009).
+/// localization (FR-010); `timezone` is a validated IANA name (FR-009) collected at
+/// the profile step (PUT /onboarding/profile). It is nullable because the language-
+/// only switch (PUT /me/preferences/language, FR-011) may create this row before the
+/// profile step runs — no default timezone is invented (FR-009); putProfile sets the
+/// validated value when the profile step completes.
 model Preferences {
-  id          String   @id @default(uuid())
-  userId      String   @unique
+  id           String   @id @default(uuid())
+  userId       String   @unique
   languageCode String
-  timezone    String
-  updatedAt   DateTime @default(now())
+  timezone     String?
+  updatedAt    DateTime @default(now())
 
   user UserAccount @relation(fields: [userId], references: [id], onDelete: Cascade)
 }
@@ -190,12 +194,12 @@ model Preferences {
 /// retention (Consent §8). State transitions are conditional updates to avoid
 /// lost updates across tabs (spec §7).
 model OnboardingState {
-  id              String                @id @default(uuid())
-  userId          String                @unique
-  state           OnboardingStateValue  @default(NOT_STARTED)
-  currentStep     String?
-  updatedAt       DateTime              @default(now())
-  lastActivityAt  DateTime              @default(now())
+  id             String               @id @default(uuid())
+  userId         String               @unique
+  state          OnboardingStateValue @default(NOT_STARTED)
+  currentStep    String?
+  updatedAt      DateTime             @default(now())
+  lastActivityAt DateTime             @default(now())
 
   user UserAccount @relation(fields: [userId], references: [id], onDelete: Cascade)
 
@@ -248,18 +252,18 @@ model AssessmentDefinition {
 /// are conditional updates to prevent lost updates across tabs (spec §7).
 /// `lastActivityAt` drives incomplete-assessment retention (Consent §8).
 model Assessment {
-  id               String                @id @default(uuid())
-  userId           String                @unique
+  id                String               @id @default(uuid())
+  userId            String               @unique
   definitionVersion String
-  state            AssessmentStateValue  @default(NOT_STARTED)
-  startedAt        DateTime?
-  submittedAt      DateTime?
-  lastActivityAt   DateTime              @default(now())
-  createdAt        DateTime              @default(now())
+  state             AssessmentStateValue @default(NOT_STARTED)
+  startedAt         DateTime?
+  submittedAt       DateTime?
+  lastActivityAt    DateTime             @default(now())
+  createdAt         DateTime             @default(now())
 
-  user    UserAccount         @relation(fields: [userId], references: [id], onDelete: Cascade)
+  user    UserAccount        @relation(fields: [userId], references: [id], onDelete: Cascade)
   answers AssessmentAnswer[]
-  result   AssessmentResult?
+  result  AssessmentResult?
 
   @@index([lastActivityAt])
 }
@@ -268,12 +272,12 @@ model Assessment {
 /// → per-answer upsert is idempotent (FR-014, research D6). `value` is typed by
 /// `questionKind` and is NEVER selected into logs/analytics (FR-030, research D7).
 model AssessmentAnswer {
-  id           String      @id @default(uuid())
+  id           String       @id @default(uuid())
   assessmentId String
   questionId   String
   questionKind QuestionKind
   value        Json
-  updatedAt    DateTime    @default(now())
+  updatedAt    DateTime     @default(now())
 
   assessment Assessment @relation(fields: [assessmentId], references: [id], onDelete: Cascade)
 
@@ -287,19 +291,19 @@ model AssessmentAnswer {
 /// `overall_score` field exists (FR-016). Bands are coaching labels, NOT safety
 /// levels (FR-018).
 model AssessmentResult {
-  id                  String   @id @default(uuid())
-  assessmentId        String   @unique
-  userId              String
-  definitionVersion   String
-  domainScores        Json
-  strongestDomain     String
-  supportDomain       String
-  selectedPriorities  Json
-  goalFreeText        Json?
-  safetyEvaluationId  String?
-  createdAt           DateTime @default(now())
+  id                 String   @id @default(uuid())
+  assessmentId       String   @unique
+  userId             String
+  definitionVersion  String
+  domainScores       Json
+  strongestDomain    String
+  supportDomain      String
+  selectedPriorities Json
+  goalFreeText       Json?
+  safetyEvaluationId String?
+  createdAt          DateTime @default(now())
 
-  assessment Assessment @relation(fields: [assessmentId], references: [id], onDelete: Cascade)
+  assessment Assessment  @relation(fields: [assessmentId], references: [id], onDelete: Cascade)
   user       UserAccount @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   @@index([userId])
@@ -380,16 +384,16 @@ model EmergencyResource {
 /// of AssessmentResult.domainScores except for the DISTRESS pattern (Safety §5),
 /// which the classifier reads as input, not from the result row.
 model SafetyEvaluation {
-  id               String          @id @default(uuid())
-  userId           String
-  assessmentId     String?
+  id                String         @id @default(uuid())
+  userId            String
+  assessmentId      String?
   definitionVersion String
-  level            SafetyLevel
-  reasons          String[]
-  triggerContext   TriggerContext
-  isCurrent        Boolean         @default(false)
-  evaluatedAt      DateTime        @default(now())
-  createdAt        DateTime        @default(now())
+  level             SafetyLevel
+  reasons           String[]
+  triggerContext    TriggerContext
+  isCurrent         Boolean        @default(false)
+  evaluatedAt       DateTime       @default(now())
+  createdAt         DateTime       @default(now())
 
   @@index([userId])
   @@index([assessmentId])

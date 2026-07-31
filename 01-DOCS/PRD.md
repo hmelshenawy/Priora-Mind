@@ -1,272 +1,367 @@
-# Priora Mind - Product Requirements Document (PRD)
+Priora Mind - Product Requirements Document (PRD)
 
-**Version:** 1.0 **Status:** Draft **Product:** Priora Mind
+Version: 1.0 Status: Draft Product: Priora Mind
 
-------------------------------------------------------------------------
+1. Product Vision
 
-# 1. Product Vision
+Priora Mind is an AI-powered mental wellness and personal growthplatform that delivers evidence-based CBT coaching and life coachingthrough personalized AI conversations. The platform helps usersunderstand their thoughts, build healthier habits, and work towardmeaningful goals while maintaining strong privacy and safety standards.
 
-Priora Mind is an AI-powered mental wellness and personal growth
-platform that delivers evidence-based CBT coaching and life coaching
-through personalized AI conversations. The platform helps users
-understand their thoughts, build healthier habits, and work toward
-meaningful goals while maintaining strong privacy and safety standards.
+The AI is a coaching companion, not a licensed therapist or medicalprofessional.
 
-The AI is a coaching companion, **not** a licensed therapist or medical
-professional.
+2. Problem Statement
 
-------------------------------------------------------------------------
+Many people need structured support for stress, anxiety, negativethinking, and personal growth but cannot always access a coach ortherapist because of cost, availability, or scheduling.
 
-# 2. Problem Statement
+Priora Mind provides structured AI-guided coaching sessions based ontrusted CBT and life-coaching resources.
 
-Many people need structured support for stress, anxiety, negative
-thinking, and personal growth but cannot always access a coach or
-therapist because of cost, availability, or scheduling.
+3. Product Goals
 
-Priora Mind provides structured AI-guided coaching sessions based on
-trusted CBT and life-coaching resources.
+Deliver personalized AI coaching.
 
-------------------------------------------------------------------------
+Generate coaching plans tailored to each user.
 
-# 3. Product Goals
+Support Arabic and English conversations.
 
--   Deliver personalized AI coaching.
--   Generate coaching plans tailored to each user.
--   Support Arabic and English conversations.
--   Base responses on trusted CBT and coaching knowledge.
--   Track long-term progress.
--   Prioritize user privacy and safety.
+Base responses on trusted CBT and coaching knowledge.
 
-------------------------------------------------------------------------
+Track long-term progress.
 
-# 4. Non Goals (MVP)
+Prioritize user privacy and safety.
 
--   Medical diagnosis
--   Medication recommendations
--   Replacing licensed therapists
--   Voice/video sessions
--   Payments
--   Human therapist marketplace
--   Community features
+4. Non Goals (MVP)
 
-------------------------------------------------------------------------
+Medical diagnosis
 
-# 5. Product Principles
+Medication recommendations
 
-1.  Evidence-Based First
-2.  AI Assists, Never Diagnoses
-3.  Safety Before Coaching
-4.  User Privacy First
-5.  Personalization Over Generic Advice
+Replacing licensed therapists
 
-------------------------------------------------------------------------
+Voice/video sessions
 
-# 6. Target Users
+Payments
 
--   Adults seeking personal growth
--   Users experiencing stress or anxiety
--   People wanting structured CBT exercises
--   Users building healthier habits
+Human therapist marketplace
 
-------------------------------------------------------------------------
+Community features
 
-# 7. Core User Journey
+5. Product Principles
 
-1.  Register
-2.  Verify email
-3.  Complete profile
-4.  Complete initial assessment
-5.  Generate coaching plan
-6.  Start coaching session
-7.  Chat with AI
-8.  Receive exercises
-9.  Complete session
-10. Review progress
+Evidence-Based First
 
-------------------------------------------------------------------------
+AI Assists, Never Diagnoses
 
-# 8. Functional Requirements
+Safety Before Coaching
 
-## Authentication
+User Privacy First
 
--   Register
--   Email verification
--   Login
--   Logout
--   Password reset
+Personalization Over Generic Advice
 
-## User Profile
+6. Target Users
 
--   Create profile
--   Update profile
--   Preferred language
--   Timezone
+Adults seeking personal growth
 
-## Assessment
+Users experiencing stress or anxiety
 
--   Complete assessment
--   Save answers
--   View previous assessments
+People wanting structured CBT exercises
 
-## Coaching Plan
+Users building healthier habits
 
--   Generate AI coaching plan
--   View plan
--   Activate plan
--   Pause plan
--   Complete plan
+7. Core User Journey
 
-## Goals
+Register
 
--   View goals
--   Track progress
+Verify email
 
-## Exercises
+Complete profile
 
--   View exercises
--   Complete exercises
+Complete initial assessment
 
-## Sessions
+Generate coaching plan
 
--   Start session
--   Continue active session
--   End session
--   View history
+Start coaching session
 
-## AI Chat
+Chat with AI
 
--   Chat with AI
--   Personalized responses
--   Session memory
--   Streaming responses
+Receive exercises
 
-## AI
+Complete session
 
--   Generate coaching plans
--   Generate session summaries
--   Recommend exercises
--   Update plans
+Review progress
 
-------------------------------------------------------------------------
+8. Functional Requirements
 
-# 9. AI Requirements
+Authentication
 
--   English knowledge base
--   Multilingual conversations
--   Arabic or English responses
--   Responses grounded in CBT references
--   Personalized coaching
--   Structured outputs for plans and summaries
+Register
 
-------------------------------------------------------------------------
+Email verification
 
-# 10. Safety Requirements
+Login
 
--   Input safety validation
--   Output safety validation
--   Crisis detection
--   Self-harm detection
--   No diagnosis
--   No medication advice
--   Escalation guidance when required
+Logout
 
-------------------------------------------------------------------------
+Password reset
 
-# 11. Non Functional Requirements
+User Profile
 
-## Performance
+Create profile
 
--   Fast authentication
--   Streaming AI responses
--   Responsive UI
+Update profile
 
-## Security
+Preferred language
 
--   Secure authentication
--   Password hashing
--   HTTPS
--   User data isolation
+Timezone
 
-## Privacy
+Assessment
 
--   User owns their data
--   Account deletion
--   Conversation deletion
+Complete one versioned initial coaching assessment
 
-## Scalability
+Save each answer and resume the single active attempt
 
--   Modular monolith
--   Provider-independent AI
--   Extensible architecture
+Review and revise answers before final submission
 
-------------------------------------------------------------------------
+Restart an incomplete attempt after confirmation
 
-# 12. MVP Scope
+Score eight equally weighted coaching domains deterministically
+
+Show a non-diagnostic result for each domain without an overall score
+
+Capture one to three user-selected coaching priorities separately fromassessment scores
+
+Keep completed answers and results immutable
+
+The approved question set, scale, scoring formula, result bands, and lifecyclerules are defined in docs/product/Assessment_Specification.md. Retakes andintentional result-history browsing are outside the initial-onboarding feature.
+
+Coaching Plan
+
+Generate AI coaching plan
+
+View plan
+
+Activate plan
+
+Pause plan
+
+Complete plan
+
+Goals
+
+View goals
+
+Track progress
+
+Exercises
+
+View exercises
+
+Complete exercises
+
+Sessions
+
+Start session
+
+Continue active session
+
+End session
+
+View history
+
+AI Chat
+
+Chat with AI
+
+Personalized responses
+
+Session memory
+
+Streaming responses
+
+AI
+
+Generate coaching plans
+
+Generate session summaries
+
+Recommend exercises
+
+Update plans
+
+9. AI Requirements
+
+English knowledge base
+
+Multilingual conversations
+
+Arabic or English responses
+
+Responses grounded in CBT references
+
+Personalized coaching
+
+Structured outputs for plans and summaries
+
+10. Safety Requirements
+
+Deterministic input safety evaluation independent of assessment scoring
+
+Output safety validation
+
+Direct self-harm and immediate-danger safety questions
+
+Risk levels: NORMAL, DISTRESS, HIGH_RISK, and CRISIS
+
+Immediate HIGH_RISK/CRISIS interruption and SAFETY_HOLD routing
+
+Deterministic bilingual safety copy that does not depend on generative AI
+
+Fail-closed behavior when safety evaluation is unavailable
+
+Approved, versioned emergency-resource registry with generic local-servicefallback and no invented contact numbers
+
+No diagnosis
+
+No medication advice
+
+Escalation guidance when required
+
+The decision matrix, routing rules, re-entry behavior, and response copy aredefined in docs/product/Safety_Decision_Matrix.md. Assessment result bandsMUST NOT be treated as safety-risk levels.
+
+11. Non Functional Requirements
+
+Performance
+
+Fast authentication
+
+Streaming AI responses
+
+Responsive UI
+
+Security
+
+Secure authentication
+
+Password hashing
+
+HTTPS
+
+User data isolation
+
+Privacy
+
+User owns their data
+
+Account deletion
+
+Conversation deletion
+
+Explicit versioned consent before profile or assessment collection
+
+Defined expiry for incomplete onboarding and assessment progress
+
+Full account deletion includes consent, assessment, goal, result, andsafety records
+
+Assessment and safety content excluded from logs, analytics, traces, anderror reports
+
+Consent, retention, re-consent, and deletion behavior are defined indocs/product/Consent_and_Data_Retention_Policy.md and require legal/privacyreview before public launch.
+
+Scalability
+
+Modular monolith
+
+Provider-independent AI
+
+Extensible architecture
+
+12. MVP Scope
 
 Included:
 
--   Authentication
--   Profile
--   Assessment
--   Coaching plan
--   Sessions
--   AI chat
--   RAG
--   Safety
--   Progress tracking
+Authentication
+
+Profile
+
+Assessment
+
+Coaching plan
+
+Sessions
+
+AI chat
+
+RAG
+
+Safety
+
+Progress tracking
 
 Excluded:
 
--   Voice
--   Payments
--   Human therapists
--   Mobile app
--   Community
+Voice
 
-------------------------------------------------------------------------
+Payments
 
-# 13. Success Metrics
+Human therapists
 
--   Users complete onboarding
--   Users generate coaching plans
--   Users complete multiple sessions
--   User retention
--   Exercise completion rate
+Mobile app
 
-------------------------------------------------------------------------
+Community
 
-# 14. Risks
+13. Success Metrics
 
--   AI hallucinations
--   Unsafe responses
--   Poor personalization
--   User privacy concerns
+Users complete onboarding
+
+Users generate coaching plans
+
+Users complete multiple sessions
+
+User retention
+
+Exercise completion rate
+
+14. Risks
+
+AI hallucinations
+
+Unsafe responses
+
+Poor personalization
+
+User privacy concerns
 
 Mitigations:
 
--   RAG
--   Safety layer
--   Evidence-based prompts
--   Human escalation guidance
+RAG
 
-------------------------------------------------------------------------
+Safety layer
 
-# 15. Constraints
+Evidence-based prompts
 
--   English-only knowledge base
--   Arabic and English conversations
--   AI coaching only
--   No medical diagnosis
--   No medication recommendations
+Human escalation guidance
 
-------------------------------------------------------------------------
+15. Constraints
 
-# 16. Future Roadmap
+English-only knowledge base
 
--   Voice conversations
--   Human therapist integration
--   Mobile applications
--   Mood tracking
--   Wearable integrations
--   Multiple AI specialists
--   Advanced analytics
+Arabic and English conversations
+
+AI coaching only
+
+No medical diagnosis
+
+No medication recommendations
+
+16. Future Roadmap
+
+Voice conversations
+
+Human therapist integration
+
+Mobile applications
+
+Mood tracking
+
+Wearable integrations
+
+Multiple AI specialists
+
+Advanced analytics

@@ -1,0 +1,122 @@
+{
+  "common": {
+    "appName": "Priora Mind",
+    "tagline": "Onboarding & assessment",
+    "loading": "Loading…",
+    "error": "Something went wrong. Please try again.",
+    "back": "Back",
+    "continue": "Continue",
+    "retry": "Retry"
+  },
+  "nav": {
+    "register": "Create account",
+    "login": "Sign in",
+    "dashboard": "Dashboard"
+  },
+  "public": {
+    "registerTitle": "Create your Priora Mind account",
+    "registerSubtitle": "Coaching and mental-wellness support — not a medical or emergency service.",
+    "emailLabel": "Email",
+    "emailPlaceholder": "you@example.com",
+    "passwordLabel": "Password",
+    "passwordHint": "At least 8 characters.",
+    "submitRegister": "Create account",
+    "registerSubmitting": "Creating your account…",
+    "registerCheckEmail": "If this email is not already registered, a verification link has been sent. Please check your inbox.",
+    "verifyEmailTitle": "Verify your email",
+    "verifying": "Verifying your email…",
+    "verifiedTitle": "Email verified",
+    "verifiedBody": "Your email is confirmed. Continue to set up your profile.",
+    "continueToOnboarding": "Continue",
+    "expiredTitle": "Link expired or already used",
+    "expiredBody": "This verification link is no longer valid. Request a new one below.",
+    "invalidTitle": "Invalid link",
+    "invalidBody": "This verification link is not valid. Please register again.",
+    "backToRegister": "Back to register",
+    "resendLabel": "Email",
+    "resendSubmit": "Send new link",
+    "resendSent": "If the email is registered and unverified, a new link has been sent.",
+    "errorGeneric": "We couldn't verify your email. Please try again."
+  },
+  "onboarding": {
+    "boundary": {
+      "title": "Service boundaries & consent",
+      "intro": "Please review the service boundaries, then acknowledge each item to continue.",
+      "boundarySectionTitle": "Service boundary disclosure",
+      "boundaryAck": "I understand the service boundaries.",
+      "termsAck": "I agree to the current Terms of Service.",
+      "termsLinkPending": "Terms link pending legal approval",
+      "privacyAck": "I acknowledge the current Privacy Notice and the described use of my assessment data.",
+      "privacyLinkPending": "Privacy Notice link pending legal approval",
+      "agreeContinue": "Agree and continue",
+      "submitting": "Recording your consent…",
+      "mustAckAll": "Please acknowledge all three items to continue.",
+      "reconsentNotice": "The notices have changed. Please review and consent again.",
+      "unavailableTitle": "Notices unavailable",
+      "unavailableBody": "We couldn't load the required notices, so you can't continue right now. Please try again shortly.",
+      "loadError": "We couldn't load the notices."
+    },
+    "profile": {
+      "title": "Your preferences",
+      "intro": "Choose your language and timezone. You can change these later.",
+      "languageLabel": "Language",
+      "languageHint": "Switching language updates the direction and language of every screen.",
+      "english": "English",
+      "arabic": "العربية",
+      "timezoneLabel": "Timezone",
+      "selectTimezone": "Select your timezone",
+      "invalidTimezone": "Please select a valid timezone.",
+      "saveContinue": "Save and continue",
+      "submitting": "Saving…",
+      "loadError": "We couldn't load your profile."
+    }
+  },
+  "protected": {
+    "dashboardPlaceholder": "Onboarding complete — coaching plan comes in a future release."
+  },
+  "safety": {
+    "title": "Your safety comes first",
+    "crisisLabel": "Crisis support",
+    "highRiskLabel": "Safety support",
+    "historicalTitle": "Previous safety checks",
+    "reentryTitle": "Re-check your safety",
+    "reentryIntro": "Please answer the safety questions again to continue. Your answers are reviewed deterministically, not by AI.",
+    "reentrySubmit": "Re-check and continue",
+    "reentrySubmitting": "Checking…",
+    "reentryRequired": "Please answer all required safety questions to continue.",
+    "unavailable": "We cannot safely evaluate your answers right now, so the assessment cannot continue. If you feel you may be in immediate danger, contact your local emergency services now."
+  },
+  "assessment": {
+    "title": "Your assessment",
+    "notDiagnosis": "This is a coaching insight, not a diagnosis or a substitute for professional care.",
+    "begin": "Begin assessment",
+    "progress": "Question {current} of {total}",
+    "requiredHint": "Please answer this question to continue.",
+    "startOver": "Start over",
+    "reviewTitle": "Review your answers",
+    "reviewIntro": "You answered {count} of {total} questions. Submit when you are ready.",
+    "submit": "Submit assessment",
+    "submitting": "Submitting…",
+    "incomplete": "Some required questions are still unanswered.",
+    "safetyHold": "Your assessment is paused for your safety. Please follow the guidance shown to you.",
+    "loadError": "We couldn't load your assessment.",
+    "safeRestartTitle": "Resume unavailable",
+    "safeRestartBody": "Your saved assessment was collected against an older version and can't be resumed safely. Start over to begin a fresh assessment on the current version. Your previous answers will be cleared; no partial result is kept.",
+    "safeRestartAction": "Start over safely",
+    "restartConfirm": "Starting over will clear your current answers and begin the assessment again. Continue?",
+    "confirmRestart": "Yes, start over",
+    "cancelRestart": "Cancel",
+    "restarting": "Restarting…",
+    "result": {
+      "title": "Your coaching insight",
+      "notDiagnosis": "This insight is a coaching reflection, not a clinical diagnosis and not a substitute for professional care.",
+      "scoresLabel": "Domain scores",
+      "strongest": "Current strength: {domain}.",
+      "support": "Area that may benefit from support: {domain}.",
+      "priorities": "Your priorities",
+      "transitionHint": "Your coaching plan comes in a future release.",
+      "safetyHold": "Your result is paused for your safety. Please follow the guidance shown to you.",
+      "continue": "Continue to dashboard"
+    }
+  }
+}

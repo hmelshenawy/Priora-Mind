@@ -1,0 +1,437 @@
+// Prisma schema for Priora Mind backend (Feature 001: user onboarding & assessment).
+//
+// Models are added per user story as their migrations land (research D1, data-model.md):
+//   m_init_auth      -> UserAccount, VerificationToken, RefreshToken        (US1)
+//   m_consent        -> ConsentRecord, NoticeVersionSet                      (US2)
+//   m_profile        -> Profile, Preferences, OnboardingState               (US3)
+//   m_assessment_def -> AssessmentDefinition                                (US4)
+//   m_assessment     -> Assessment, AssessmentAnswer, AssessmentResult       (US4)
+//   m_safety_def     -> SafetyDefinition, SafetyCopy, EmergencyResource     (US6)
+//   m_safety         -> SafetyEvaluation                                     (US6)
+//   m_retention      -> DeletionLog                                          (Polish)
+//
+// Each module owns its models (SAD §5 / ADR-005); no cross-module direct access.
+// This file currently holds only the datasource + generator so `prisma generate`
+// succeeds during the Foundational phase; story tasks append their model blocks
+// under the section comments below.
+
+generator client {
+  provider = "prisma-client-js"
+  // Hoisted monorepo: `@prisma/client` resolves to the root `node_modules/@prisma`
+  // wrapper, which loads `node_modules/.prisma/client` at the repo root (the
+  // wrapper re-exports `.prisma/client/default`, resolved up the node_modules
+  // tree). Generating there keeps the loaded client in sync with this schema;
+  // `../node_modules/.prisma/client` would write inside 02-BACKEND and go unused.
+  output = "../../node_modules/.prisma/client"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+// ───────────────────────── Auth (US1 / US2) ─────────────────────────
+// UserAccount, VerificationToken, RefreshToken, ConsentRecord, NoticeVersionSet
+//   m_init_auth -> UserAccount, VerificationToken, RefreshToken        (US1, done)
+//   m_consent    -> ConsentRecord, NoticeVersionSet (seed v1.0)         (US2)
+
+enum AccountStatus {
+  REGISTERED
+  EMAIL_VERIFIED
+}
+
+/// Auth-owned user identity (data-model §1). Email is unique among live rows;
+/// the partial-unique index `WHERE "deletedAt" IS NULL` (see migration m_init_auth)
+/// allows a deleted email to be re-registered. `passwordHash` is never selected
+/// into responses/logs. Anti-enumeration: existence is never disclosed (FR-004).
+model UserAccount {
+  id             String       @id @default(uuid())
+  email          String
+  passwordHash   String
+  status         AccountStatus
+  createdAt      DateTime     @default(now())
+  lastActivityAt DateTime     @default(now())
+  deletedAt      DateTime?
+
+  verificationTokens VerificationToken[]
+  refreshTokens      RefreshToken[]
+  consentRecords     ConsentRecord[]
+  profile            Profile?
+  preferences        Preferences?
+  onboardingState    OnboardingState?
+  assessment         Assessment?
+  assessmentResults  AssessmentResult[]
+
+  @@index([status])
+  @@index([lastActivityAt])
+}
+
+/// Single-use, short-TTL verification token (data-model §2). Only the hash is
+/// stored; the raw token appears solely in the emailed link (research D2).
+/// One unconsumed token per user at a time — resend rotates (deletes prior
+/// unconsumed rows in app logic before inserting a new one).
+model VerificationToken {
+  id         String    @id @default(uuid())
+  userId     String
+  tokenHash  Bytes
+  expiresAt  DateTime
+  consumedAt DateTime?
+  createdAt  DateTime  @default(now())
+
+  user UserAccount @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+}
+
+/// Rotating refresh token (data-model §3, SAD §13). The hash is stored; the raw
+/// token is the HttpOnly cookie value. Rotation revokes the prior row.
+model RefreshToken {
+  id         String    @id @default(uuid())
+  userId     String
+  tokenHash  Bytes
+  expiresAt  DateTime
+  revokedAt  DateTime?
+  createdAt  DateTime  @default(now())
+
+  user UserAccount @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+}
+
+/// Versioned service-boundary disclosure + Terms/Privacy Notice identifiers
+/// (data-model §12, Consent policy §6). Immutable once published; a new version
+/// set is a new row. The active row drives notices + re-consent (FR-007/FR-008).
+/// Final Terms/Privacy Notice text + links are launch-gated (Consent §15) and
+/// ship as placeholders until legal approval.
+model NoticeVersionSet {
+  id                     String   @id @default(uuid())
+  serviceBoundaryVersion String
+  termsVersion           String
+  privacyNoticeVersion   String
+  boundaryTextEn         String
+  boundaryTextAr         String
+  termsLinkEn            String
+  termsLinkAr            String
+  privacyNoticeLinkEn    String
+  privacyNoticeLinkAr    String
+  publishedAt            DateTime @default(now())
+  isActive               Boolean  @default(true)
+
+  @@unique([serviceBoundaryVersion, termsVersion, privacyNoticeVersion])
+}
+
+/// Granted consent (data-model §4, Consent policy §5). Append-only; the latest
+/// granted row by `grantedAt` drives access. MUST NOT contain answers/safety
+/// data/inferred state/copied notice text (Consent §5). Unique on
+/// `(userId, *_version)` makes a same-version retry idempotent (research D6).
+/// A new version set creates a new row; superseded rows are retained for audit
+/// and removed on account deletion (Consent §8).
+model ConsentRecord {
+  id                     String   @id @default(uuid())
+  userId                 String
+  serviceBoundaryVersion String
+  termsVersion           String
+  privacyNoticeVersion   String
+  consentLanguageCode    String
+  productChannelId       String
+  grantedAt              DateTime @default(now())
+  createdAt              DateTime @default(now())
+
+  user UserAccount @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, serviceBoundaryVersion, termsVersion, privacyNoticeVersion])
+  @@index([userId])
+}
+
+// ───────────────────────── Profile (US3) ──────────────────────────
+// Profile, Preferences, OnboardingState
+//   m_profile -> Profile, Preferences, OnboardingState (+ onboarding state enum)
+
+/// Onboarding journey state values (data-model §7). Named `OnboardingStateValue`
+/// (not `OnboardingState`) so the enum and the model can coexist in the schema
+/// namespace. Maps to the product `onboarding_state` enum (spec §9).
+enum OnboardingStateValue {
+  NOT_STARTED
+  IN_PROGRESS
+  ASSESSMENT_PENDING
+  ASSESSMENT_IN_PROGRESS
+  ASSESSMENT_SUBMITTED
+  COMPLETED
+  SAFETY_HOLD
+}
+
+/// 1:1 identity profile (data-model §5). Created once consent is granted; only
+/// language + timezone are collected in this feature (FR-009). Additional
+/// attributes belong to future features.
+model Profile {
+  id        String   @id @default(uuid())
+  userId    String   @unique
+  createdAt DateTime @default(now())
+  updatedAt DateTime @default(now())
+
+  user UserAccount @relation(fields: [userId], references: [id], onDelete: Cascade)
+}
+
+/// 1:1 user preferences (data-model §6). `languageCode` drives RTL/LTR +
+/// localization (FR-010); `timezone` is a validated IANA name (FR-009).
+model Preferences {
+  id          String   @id @default(uuid())
+  userId      String   @unique
+  languageCode String
+  timezone    String
+  updatedAt   DateTime @default(now())
+
+  user UserAccount @relation(fields: [userId], references: [id], onDelete: Cascade)
+}
+
+/// 1:1 onboarding state (data-model §7, spec A4 "one onboarding state per user").
+/// `state` is the journey state; `currentStep` is the unfinished step the user
+/// resumes at (FR-033, US8). `lastActivityAt` drives incomplete-onboarding
+/// retention (Consent §8). State transitions are conditional updates to avoid
+/// lost updates across tabs (spec §7).
+model OnboardingState {
+  id              String                @id @default(uuid())
+  userId          String                @unique
+  state           OnboardingStateValue  @default(NOT_STARTED)
+  currentStep     String?
+  updatedAt       DateTime              @default(now())
+  lastActivityAt  DateTime              @default(now())
+
+  user UserAccount @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([lastActivityAt])
+}
+
+// ───────────────────────── Assessment (US4 / US5) ──────────────────
+// AssessmentDefinition, Assessment, AssessmentAnswer, AssessmentResult
+//   m_assessment_def -> AssessmentDefinition (seed v1.0)               (US4)
+//   m_assessment     -> Assessment, AssessmentAnswer, AssessmentResult  (US4)
+
+/// Assessment lifecycle state values (data-model §8, spec §9). Named
+/// `AssessmentStateValue` so the enum and the `Assessment` model coexist.
+enum AssessmentStateValue {
+  NOT_STARTED
+  IN_PROGRESS
+  SUSPENDED
+  SUBMITTED
+  SCORED
+}
+
+/// Answer value shape, typed by `question_kind` (data-model §9):
+///  - current_state: number 0–4
+///  - goal_select: string[] (1–3 domain codes)
+///  - goal_rank: { [domain]: rank }
+///  - goal_free_text: { [domain]: { text, suggested? } } | { text?, suggested? }
+///  - safety (US6): { code: "S0".."SX" | "D0".."DX" | "F0".."FX" }
+enum QuestionKind {
+  current_state
+  goal_select
+  goal_rank
+  goal_free_text
+  safety
+}
+
+/// Versioned, immutable assessment definition (data-model §12, research D5).
+/// `content` holds the full v1.0 definition as JSON (questions, scale, goals,
+/// bands, formula version). Source: Assessment_Specification v1.0. A new version
+/// is a new row; completed results pin the version they were scored under.
+model AssessmentDefinition {
+  id          String   @id @default(uuid())
+  version     String   @unique
+  isActive    Boolean  @default(true)
+  content     Json
+  publishedAt DateTime @default(now())
+}
+
+/// The active initial assessment; one per user (FR-018a, data-model §8).
+/// `userId` unique enforces "one active initial assessment". State transitions
+/// are conditional updates to prevent lost updates across tabs (spec §7).
+/// `lastActivityAt` drives incomplete-assessment retention (Consent §8).
+model Assessment {
+  id               String                @id @default(uuid())
+  userId           String                @unique
+  definitionVersion String
+  state            AssessmentStateValue  @default(NOT_STARTED)
+  startedAt        DateTime?
+  submittedAt      DateTime?
+  lastActivityAt   DateTime              @default(now())
+  createdAt        DateTime              @default(now())
+
+  user    UserAccount         @relation(fields: [userId], references: [id], onDelete: Cascade)
+  answers AssessmentAnswer[]
+  result   AssessmentResult?
+
+  @@index([lastActivityAt])
+}
+
+/// One saved answer per question (data-model §9). Unique(assessmentId, questionId)
+/// → per-answer upsert is idempotent (FR-014, research D6). `value` is typed by
+/// `questionKind` and is NEVER selected into logs/analytics (FR-030, research D7).
+model AssessmentAnswer {
+  id           String      @id @default(uuid())
+  assessmentId String
+  questionId   String
+  questionKind QuestionKind
+  value        Json
+  updatedAt    DateTime    @default(now())
+
+  assessment Assessment @relation(fields: [assessmentId], references: [id], onDelete: Cascade)
+
+  @@unique([assessmentId, questionId])
+  @@index([assessmentId])
+}
+
+/// Exactly one scored result per assessment (FR-015, data-model §10). Unique on
+/// `assessmentId`. Immutable after creation. `safetyEvaluationId` references the
+/// final gating SafetyEvaluation (US6; null until safety lands). No
+/// `overall_score` field exists (FR-016). Bands are coaching labels, NOT safety
+/// levels (FR-018).
+model AssessmentResult {
+  id                  String   @id @default(uuid())
+  assessmentId        String   @unique
+  userId              String
+  definitionVersion   String
+  domainScores        Json
+  strongestDomain     String
+  supportDomain       String
+  selectedPriorities  Json
+  goalFreeText        Json?
+  safetyEvaluationId  String?
+  createdAt           DateTime @default(now())
+
+  assessment Assessment @relation(fields: [assessmentId], references: [id], onDelete: Cascade)
+  user       UserAccount @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+}
+
+// ───────────────────────── Safety (US6) ───────────────────────────
+// SafetyDefinition, SafetyCopy, EmergencyResource, SafetyEvaluation
+//   m_safety_def -> SafetyDefinition, SafetyCopy, EmergencyResource (seed v1.0) (US6)
+//   m_safety     -> SafetyEvaluation (+ safety_level, trigger_context enums)    (US6)
+
+/// Safety classification levels (data-model §11, spec §9, Safety Matrix §5).
+/// Explicit, deterministic, NEVER produced by generative AI (FR-019/FR-020).
+/// Bands are NOT safety levels (FR-018): coaching labels live on AssessmentResult.
+enum SafetyLevel {
+  NORMAL
+  DISTRESS
+  HIGH_RISK
+  CRISIS
+}
+
+/// When a SafetyEvaluation was produced (data-model §11, FR-019a).
+/// `per_answer` = after a saved answer; `on_submit` = final submission;
+/// `re_entry` = user-initiated re-entry from SAFETY_HOLD (Safety Matrix §9).
+enum TriggerContext {
+  per_answer
+  on_submit
+  re_entry
+}
+
+/// Versioned, immutable safety definition (data-model §12, research D5). `content`
+/// holds the full v1.0 SQ questions + classification matrix as JSON. Source:
+/// Safety_Decision_Matrix v1.0. A new version is a new row. The application uses the
+/// typed constant SAFETY_QUESTIONS (src/modules/safety/safety-definition.ts) as the
+/// behavioral source of truth; this row is the immutable audit/version record.
+model SafetyDefinition {
+  id          String   @id @default(uuid())
+  version     String   @unique
+  isActive    Boolean  @default(true)
+  content     Json
+  publishedAt DateTime @default(now())
+}
+
+/// Versioned, immutable approved deterministic copy (data-model §12, Safety Matrix
+/// §7). One row per level (DISTRESS/HIGH_RISK/CRISIS/unavailable) per version. The
+/// application reads SAFETY_COPY as the behavioral source of truth; this row is the
+/// immutable audit/version record. Copy is NEVER generatively rewritten (FR-021).
+model SafetyCopy {
+  id          String   @id @default(uuid())
+  version     String
+  level       String
+  copyEn      String
+  copyAr      String
+  publishedAt DateTime @default(now())
+
+  @@unique([version, level])
+}
+
+/// Approved, versioned emergency resources (data-model §12, Safety Matrix §8,
+/// FR-024). ONLY approved rows are ever displayed; missing/unverified → generic
+/// local-emergency fallback. EMPTY for MVP (Safety §13 launch gate) — no hotline
+/// number, provider, or contact is invented. The application uses APPROVED_RESOURCES
+/// (empty) as the behavioral source of truth; this table is the governance record.
+model EmergencyResource {
+  id          String    @id @default(uuid())
+  version     String
+  countryCode String?
+  resourceEn  String
+  resourceAr  String
+  approved    Boolean   @default(false)
+  approvedAt  DateTime?
+  publishedAt DateTime  @default(now())
+}
+
+/// Immutable, append-only safety evaluation (data-model §11, Safety Matrix §9,
+/// research D9). NEVER updated or deleted except by account deletion (FR-031).
+/// Historical rows are retained and never relabeled; only `is_current` flips so the
+/// latest completed evaluation drives current routing. Classification is independent
+/// of AssessmentResult.domainScores except for the DISTRESS pattern (Safety §5),
+/// which the classifier reads as input, not from the result row.
+model SafetyEvaluation {
+  id               String          @id @default(uuid())
+  userId           String
+  assessmentId     String?
+  definitionVersion String
+  level            SafetyLevel
+  reasons          String[]
+  triggerContext   TriggerContext
+  isCurrent        Boolean         @default(false)
+  evaluatedAt      DateTime        @default(now())
+  createdAt        DateTime        @default(now())
+
+  @@index([userId])
+  @@index([assessmentId])
+  @@index([userId, isCurrent])
+}
+
+// ───────────────────────── Retention (Polish) ─────────────────────
+// DeletionLog + run_kind/retention_status enums (data-model §13, research D10).
+//   m_retention -> DeletionLog + inactivity-cutoff indexes            (Polish)
+
+/// Kind of deletion run (data-model §13). `scheduled_retention` = the daily
+/// @Cron cleanup; `account_deletion` = the user-initiated flow (Consent §9).
+enum RunKind {
+  scheduled_retention
+  account_deletion
+}
+
+/// Run status (data-model §13). `completed` = all categories errors===0;
+/// `partial` = some category errors (access stays disabled, retries safely);
+/// `failed` = whole-job failure (e.g. DB unreachable — re-runs next tick).
+enum RetentionStatus {
+  completed
+  partial
+  failed
+}
+
+/// Operational record of a retention/account-deletion run (data-model §13,
+/// research D10). SANITIZED COUNTERS ONLY — no email, answers, scores, safety
+/// answers/levels, or consent contents ever (FR-030, Consent §8). Retained 30d
+/// (Consent §8 operational deletion record). `confirmationId` is the idempotency
+/// marker for a run window.
+model DeletionLog {
+  id             String          @id @default(uuid())
+  runKind        RunKind
+  windowStart    DateTime
+  windowEnd      DateTime
+  categoryCounts Json
+  errorSummary   String?
+  status         RetentionStatus
+  confirmationId String
+  createdAt      DateTime        @default(now())
+
+  @@index([runKind])
+  @@index([createdAt])
+}

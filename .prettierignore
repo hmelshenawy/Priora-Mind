@@ -1,0 +1,17 @@
+node_modules/
+dist/
+build/
+.next/
+out/
+coverage/
+test-results/
+playwright-report/
+playwright/.cache/
+*.log
+package-lock.json
+pnpm-lock.yaml
+yarn.lock
+specs/
+01-DOCS/
+.specify/
+.claude/

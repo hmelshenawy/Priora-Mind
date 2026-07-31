@@ -1,0 +1,23 @@
+{
+  "name": "priora-mind",
+  "version": "0.1.0",
+  "private": true,
+  "description": "Priora Mind — AI-powered mental-wellness coaching platform (Feature 001: user onboarding & assessment).",
+  "workspaces": [
+    "shared",
+    "02-BACKEND",
+    "03-FRONTEND"
+  ],
+  "scripts": {
+    "dev:backend": "npm -w 02-BACKEND run start:dev",
+    "dev:frontend": "npm -w 03-FRONTEND run dev",
+    "build": "npm -w 02-BACKEND run build && npm -w 03-FRONTEND run build",
+    "lint": "npm -w 02-BACKEND run lint && npm -w 03-FRONTEND run lint",
+    "test:backend": "npm -w 02-BACKEND run test",
+    "test:frontend": "npm -w 03-FRONTEND run test",
+    "test:e2e:frontend": "npm -w 03-FRONTEND run test:e2e"
+  },
+  "engines": {
+    "node": ">=20.0.0"
+  }
+}

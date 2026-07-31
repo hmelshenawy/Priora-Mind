@@ -121,10 +121,20 @@ src/
 
 # 7. Routing
 
-Public: - / - /login - /register - /verify-email
+Public (no auth): - / - /login - /register - /verify-email
 
-Protected: - /dashboard - /profile - /assessment - /plans - /plans/:id -
-/sessions - /sessions/:id
+Protected onboarding journey (onboarding-state-gated, US1–US6):
+- /onboarding/boundary - service-boundary disclosure + required consent (FR-005/FR-006)
+- /onboarding/profile - minimum profile (language + timezone)
+- /assessment - assessment wizard (intro → questions → review; save/resume)
+- /assessment/result - non-diagnostic coaching insight (suppressed while SAFETY_HOLD)
+- /safety/hold - SAFETY_HOLD page + re-entry (Safety Matrix §9)
+
+Protected post-onboarding:
+- /dashboard - post-onboarding transition point (placeholder, US7)
+- /profile - authenticated profile view/edit
+
+Future (out of MVP scope, see §17): - /plans - /plans/:id - /sessions - /sessions/:id
 
 ------------------------------------------------------------------------
 

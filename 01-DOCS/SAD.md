@@ -79,26 +79,28 @@ NestJS Backend
 
 ## Auth Module
 
-Owns: - UserAccount - RefreshToken - VerificationToken
+Owns: - UserAccount - RefreshToken - VerificationToken - ConsentRecord
 
 Responsibilities: - Register - Login - Logout - Email verification -
-Password reset
+Password reset - Consent recording (notice version + timestamp)
 
 ------------------------------------------------------------------------
 
 ## Profile Module
 
-Owns: - Profile - Preferences
+Owns: - Profile - Preferences - OnboardingState
 
-Responsibilities: - User profile - Language - Timezone
+Responsibilities: - User profile - Language - Timezone - Onboarding
+lifecycle state
 
 ------------------------------------------------------------------------
 
 ## Assessment Module
 
-Owns: - Assessment - AssessmentAnswer
+Owns: - Assessment - AssessmentAnswer - AssessmentResult
 
-Responsibilities: - Assessment lifecycle - Answer storage
+Responsibilities: - Assessment lifecycle - Answer storage -
+Deterministic (non-AI) assessment scoring
 
 ------------------------------------------------------------------------
 
@@ -125,8 +127,28 @@ persistence
 Owns: No business entities.
 
 Responsibilities: - Plan generation - Chat generation - Session
-summarization - Prompt construction - Safety execution - Knowledge
-retrieval
+summarization - Prompt construction - Generative-AI output safety
+validation - Knowledge retrieval
+
+Note: Deterministic safety classification and the safety response are
+owned by the Safety Module, not the AI Module. The AI Module's safety
+responsibility is limited to validating generative-AI output.
+
+------------------------------------------------------------------------
+
+## Safety Module
+
+Owns: - SafetyEvaluation
+
+Responsibilities: - Deterministic risk classification
+(NORMAL/DISTRESS/HIGH_RISK/CRISIS) of user inputs and assessment
+answers - HIGH_RISK safety decision matrix - Deterministic CRISIS
+response - Fail-closed fallback - Safety-classification rule versioning
+
+The Safety Module owns deterministic safety classification and the
+safety response. It is separate from Assessment scoring and is NOT
+part of the AI provider integration. It is reusable by current
+(assessment) and future (chat/session) safety-sensitive flows.
 
 ------------------------------------------------------------------------
 
@@ -293,6 +315,14 @@ ADR-003 Safety layer before and after AI generation.
 ADR-004 Build only infrastructure required for MVP.
 
 ADR-005 One entity has one owner module.
+
+ADR-006 Dedicated Safety Module owns deterministic safety
+classification (NORMAL/DISTRESS/HIGH_RISK/CRISIS), the HIGH_RISK
+decision matrix, and the deterministic CRISIS response, separate from
+Assessment scoring and from the AI provider integration. ConsentRecord
+is owned by the Auth module; OnboardingState is owned by the Profile
+module; AssessmentResult and deterministic scoring are owned by the
+Assessment module.
 
 ------------------------------------------------------------------------
 

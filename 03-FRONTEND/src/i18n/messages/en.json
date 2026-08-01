@@ -36,7 +36,17 @@
     "resendLabel": "Email",
     "resendSubmit": "Send new link",
     "resendSent": "If the email is registered and unverified, a new link has been sent.",
-    "errorGeneric": "We couldn't verify your email. Please try again."
+    "errorGeneric": "We couldn't verify your email. Please try again.",
+    "loginTitle": "Sign in to Priora Mind",
+    "loginSubtitle": "Coaching and mental-wellness support — not a medical or emergency service.",
+    "submitLogin": "Sign in",
+    "loginSubmitting": "Signing in…",
+    "loginRedirecting": "Signing you in…",
+    "loginInvalidCredentials": "Incorrect email or password.",
+    "loginToRegisterPrompt": "Don't have an account?",
+    "loginToRegisterLink": "Create one",
+    "registerToLoginPrompt": "Already have an account?",
+    "registerToLoginLink": "Sign in"
   },
   "onboarding": {
     "boundary": {
@@ -73,6 +83,35 @@
   },
   "protected": {
     "dashboardPlaceholder": "Onboarding complete — coaching plan comes in a future release."
+  },
+  "coaching": {
+    "starting": "Starting your coaching plan…",
+    "pending": "Preparing your coaching plan…",
+    "generating": "Generating your coaching plan…",
+    "startableTitle": "Your coaching plan is ready to start",
+    "startableBody": "We will create your plan from your completed assessment.",
+    "start": "Start plan",
+    "failedTitle": "Coaching plan generation failed",
+    "failedBody": "You can retry generation for the same current plan.",
+    "unavailableTitle": "Coaching plan unavailable",
+    "unavailableBody": "Approved coaching content is not available yet, so plan generation is currently disabled.",
+    "noAssessmentTitle": "Assessment required",
+    "noAssessmentBody": "Complete your assessment before starting a coaching plan.",
+    "safetyHoldTitle": "Safety flow active",
+    "safetyHoldBody": "Your coaching plan is paused while the safety flow is active.",
+    "ineligibleTitle": "Onboarding not complete",
+    "ineligibleBody": "Complete the required onboarding steps before opening your coaching plan.",
+    "errorTitle": "We could not load your plan",
+    "errorBody": "Please try again.",
+    "goals": "Goals",
+    "actions": "Actions",
+    "acceptPlan": "Accept plan",
+    "accepting": "Accepting…",
+    "proposed": "Proposed",
+    "active": "Active",
+    "completed": "Completed",
+    "actionIncomplete": "Incomplete",
+    "actionComplete": "Complete"
   },
   "safety": {
     "title": "Your safety comes first",

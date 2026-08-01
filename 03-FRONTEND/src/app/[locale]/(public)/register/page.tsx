@@ -7,6 +7,7 @@ import { useTranslations, useLocale } from 'next-intl';
 import { z } from 'zod';
 import { useRegisterMutation } from '../../../../features/auth/auth-hooks';
 import { ApiError } from '../../../../lib/api-client';
+import { Link } from '../../../../i18n/navigation';
 import type { LanguageCode } from '../../../../features/auth/auth.api';
 
 const schema = z.object({
@@ -126,6 +127,13 @@ export default function RegisterPage() {
           {isSubmitting || registerMut.isPending ? t('registerSubmitting') : t('submitRegister')}
         </button>
       </form>
+
+      <p className="text-sm text-muted-foreground">
+        {t('registerToLoginPrompt')}{' '}
+        <Link href="/login" className="font-medium underline">
+          {t('registerToLoginLink')}
+        </Link>
+      </p>
     </main>
   );
 }

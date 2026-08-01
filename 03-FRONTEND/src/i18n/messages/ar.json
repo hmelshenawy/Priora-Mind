@@ -36,7 +36,17 @@
     "resendLabel": "البريد الإلكتروني",
     "resendSubmit": "إرسال رابط جديد",
     "resendSent": "إذا كان البريد مسجّلاً وغير مؤكَّد، فقد أُرسل رابط جديد.",
-    "errorGeneric": "تعذّر تأكيد بريدك. يرجى المحاولة مرة أخرى."
+    "errorGeneric": "تعذّر تأكيد بريدك. يرجى المحاولة مرة أخرى.",
+    "loginTitle": "تسجيل الدخول إلى بريورا مايند",
+    "loginSubtitle": "دعم التوجيه والصحة النفسية — وليس خدمة طبية أو طوارئ.",
+    "submitLogin": "تسجيل الدخول",
+    "loginSubmitting": "جارٍ تسجيل الدخول…",
+    "loginRedirecting": "جارٍ تسجيل دخولك…",
+    "loginInvalidCredentials": "البريد الإلكتروني أو كلمة المرور غير صحيحة.",
+    "loginToRegisterPrompt": "ليس لديك حساب؟",
+    "loginToRegisterLink": "أنشئ حسابًا",
+    "registerToLoginPrompt": "هل لديك حساب بالفعل؟",
+    "registerToLoginLink": "تسجيل الدخول"
   },
   "onboarding": {
     "boundary": {
@@ -73,6 +83,35 @@
   },
   "protected": {
     "dashboardPlaceholder": "اكتملت التهيئة — خطة التوجيه ستأتي في إصدار لاحق."
+  },
+  "coaching": {
+    "starting": "جارٍ بدء خطة التوجيه…",
+    "pending": "جارٍ تجهيز خطة التوجيه…",
+    "generating": "جارٍ إنشاء خطة التوجيه…",
+    "startableTitle": "يمكنك بدء خطة التوجيه",
+    "startableBody": "سننشئ خطتك من تقييمك المكتمل.",
+    "start": "بدء الخطة",
+    "failedTitle": "تعذّر إنشاء خطة التوجيه",
+    "failedBody": "يمكنك إعادة محاولة إنشاء الخطة الحالية نفسها.",
+    "unavailableTitle": "خطة التوجيه غير متاحة",
+    "unavailableBody": "محتوى التوجيه المعتمد غير متاح بعد، لذلك تم تعطيل إنشاء الخطط حاليًا.",
+    "noAssessmentTitle": "التقييم مطلوب",
+    "noAssessmentBody": "أكمل تقييمك قبل بدء خطة التوجيه.",
+    "safetyHoldTitle": "مسار السلامة نشط",
+    "safetyHoldBody": "تم إيقاف خطة التوجيه مؤقتًا أثناء نشاط مسار السلامة.",
+    "ineligibleTitle": "التهيئة غير مكتملة",
+    "ineligibleBody": "أكمل خطوات التهيئة المطلوبة قبل فتح خطة التوجيه.",
+    "errorTitle": "تعذّر تحميل خطتك",
+    "errorBody": "يرجى المحاولة مرة أخرى.",
+    "goals": "الأهداف",
+    "actions": "الإجراءات",
+    "acceptPlan": "قبول الخطة",
+    "accepting": "جارٍ القبول…",
+    "proposed": "مقترحة",
+    "active": "نشطة",
+    "completed": "مكتملة",
+    "actionIncomplete": "غير مكتمل",
+    "actionComplete": "مكتمل"
   },
   "safety": {
     "title": "سلامتك أولًا",

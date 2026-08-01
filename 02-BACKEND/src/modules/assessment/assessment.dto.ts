@@ -210,3 +210,14 @@ export interface ResultResponse {
   selected_priorities: { domains: DomainCode[]; ranking: Record<string, number> };
   goal_free_text: Record<string, unknown> | null;
 }
+
+export interface ScoredResultDto {
+  resultId: string;
+  assessmentId: string;
+  definitionVersion: string;
+  domainScores: Record<string, unknown>;
+  strongestDomain: DomainCode;
+  supportDomain: DomainCode;
+  selectedPriorities: { domains: DomainCode[]; ranking: Record<string, number> };
+  goalFreeText: Record<string, unknown> | null;
+}

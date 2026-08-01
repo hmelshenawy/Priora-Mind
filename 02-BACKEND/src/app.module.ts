@@ -11,6 +11,7 @@ import { ProfileModule } from './modules/profile/profile.module';
 import { AssessmentModule } from './modules/assessment/assessment.module';
 import { SafetyModule } from './modules/safety/safety.module';
 import { RetentionModule } from './modules/retention/retention.module';
+import { CoachingModule } from './modules/coaching/coaching.module';
 
 /**
  * Root application module.
@@ -36,6 +37,7 @@ import { RetentionModule } from './modules/retention/retention.module';
     ProfileModule,
     AssessmentModule,
     SafetyModule,
+    CoachingModule,
     RetentionModule,
   ],
   controllers: [AppController],

@@ -11,9 +11,16 @@ import { getAccessToken } from '../../lib/auth-token';
  * SECURITY NOTE: This guard is NOT a security boundary. Backend route guards and
  * ownership checks enforce isolation; a client missing this component must never
  * expose protected data. This component only improves UX by redirecting an
- * obviously-unauthenticated browser to the registration entry point instead of
+ * obviously-unauthenticated browser to the sign-in entry point instead of
  * showing a protected shell that will immediately 401. Never rely on it for
  * authorization — backend enforcement is authoritative.
+ *
+ * The intended destination is not captured as a return URL: the project does not
+ * currently support safe return URLs, and introducing one here would create an
+ * open-redirect surface. After sign-in, the login page routes via the backend's
+ * authoritative `next_route` (FR-033), which already lands a completed user on
+ * /dashboard and an incomplete user on their unfinished step — so the user is
+ * never stranded and never reaches a protected area they cannot access.
  */
 export function RequireAuth({ children }: { children: ReactNode }) {
   const locale = useLocale();
@@ -21,7 +28,7 @@ export function RequireAuth({ children }: { children: ReactNode }) {
 
   useEffect(() => {
     if (getAccessToken() === null) {
-      router.replace(`/${locale}/register`);
+      router.replace(`/${locale}/login`);
     }
   }, [locale, router]);
 

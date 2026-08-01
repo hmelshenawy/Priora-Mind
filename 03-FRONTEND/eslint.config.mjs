@@ -20,8 +20,11 @@ export default tseslint.config(
   {
     ignores: [
       '.next/**',
+      'dist/**',
+      'build/**',
       'node_modules/**',
       'coverage/**',
+      '*.min.js',
       'playwright-report/**',
       'test-results/**',
     ],

@@ -61,6 +61,7 @@ model UserAccount {
   onboardingState    OnboardingState?
   assessment         Assessment?
   assessmentResults  AssessmentResult[]
+  coachingPlans      CoachingPlan[]
 
   @@index([status])
   @@index([lastActivityAt])
@@ -307,6 +308,161 @@ model AssessmentResult {
   user       UserAccount @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   @@index([userId])
+}
+
+// ───────────────────────── Coaching (002 foundational) ─────────────
+// CoachingPlan, FocusArea, Goal, ActionStep, CoachingPlanGeneration,
+// CoachingActionLibrary, CoachingDisclaimer.
+
+enum CoachingPlanStatus {
+  PROPOSED
+  ACTIVE
+  COMPLETED
+}
+
+enum CoachingGenerationStatus {
+  PENDING
+  GENERATING
+  READY
+  FAILED
+}
+
+enum ActionStatus {
+  INCOMPLETE
+  COMPLETE
+}
+
+model CoachingPlan {
+  id                   String                   @id @default(uuid())
+  userId               String
+  sourceAssessmentId   String
+  sourceResultId       String
+  definitionVersion    String
+  libraryVersion       String
+  disclaimerVersion    String
+  promptVersion        String
+  planVersion          Int                      @default(1)
+  isCurrent            Boolean                  @default(true)
+  planStatus           CoachingPlanStatus?
+  generationStatus     CoachingGenerationStatus @default(PENDING)
+  generationStartedAt  DateTime?
+  generationDeadlineAt DateTime?
+  currentAttemptId     String?
+  title                Json?
+  summary              Json?
+  disclaimer           Json?
+  createdAt            DateTime                 @default(now())
+  updatedAt            DateTime                 @default(now())
+
+  user        UserAccount              @relation(fields: [userId], references: [id], onDelete: Cascade)
+  focusAreas  FocusArea[]
+  goals       Goal[]
+  actionSteps ActionStep[]
+  generations CoachingPlanGeneration[]
+
+  @@unique([userId, sourceResultId])
+  @@index([userId, isCurrent])
+  @@index([userId])
+  @@index([currentAttemptId])
+}
+
+model FocusArea {
+  id       String @id @default(uuid())
+  planId   String
+  domain   String
+  source   String
+  position Int
+  reason   Json
+
+  plan        CoachingPlan @relation(fields: [planId], references: [id], onDelete: Cascade)
+  goals       Goal[]
+  actionSteps ActionStep[]
+
+  @@index([planId])
+}
+
+model Goal {
+  id          String @id @default(uuid())
+  planId      String
+  focusAreaId String
+  position    Int
+  copy        Json
+  libraryKey  String
+
+  plan        CoachingPlan @relation(fields: [planId], references: [id], onDelete: Cascade)
+  focusArea   FocusArea    @relation(fields: [focusAreaId], references: [id], onDelete: Cascade)
+  actionSteps ActionStep[]
+
+  @@index([planId])
+  @@index([focusAreaId])
+}
+
+model ActionStep {
+  id          String       @id @default(uuid())
+  planId      String
+  focusAreaId String
+  goalId      String?
+  position    Int
+  pacingLabel Json?
+  copy        Json
+  libraryKey  String
+  status      ActionStatus @default(INCOMPLETE)
+  updatedAt   DateTime     @default(now())
+  version     Int          @default(1)
+
+  plan      CoachingPlan @relation(fields: [planId], references: [id], onDelete: Cascade)
+  focusArea FocusArea    @relation(fields: [focusAreaId], references: [id], onDelete: Cascade)
+  goal      Goal?        @relation(fields: [goalId], references: [id], onDelete: Cascade)
+
+  @@index([planId])
+  @@index([focusAreaId])
+}
+
+model CoachingPlanGeneration {
+  id                 String                   @id @default(uuid())
+  planId             String
+  attempt            Int
+  provider           String
+  modelId            String
+  promptVersion      String
+  sourceAssessmentId String
+  sourceResultId     String
+  definitionVersion  String
+  libraryVersion     String
+  disclaimerVersion  String
+  status             CoachingGenerationStatus @default(PENDING)
+  validationOutcome  Json?
+  retryCount         Int                      @default(0)
+  tokenUsage         Json?
+  latencyMs          Int?
+  startedAt          DateTime                 @default(now())
+  deadlineAt         DateTime?
+  finishedAt         DateTime?
+  errorCode          String?
+
+  plan CoachingPlan @relation(fields: [planId], references: [id], onDelete: Cascade)
+
+  @@index([planId])
+  @@index([planId, attempt])
+}
+
+model CoachingActionLibrary {
+  id          String   @id @default(uuid())
+  version     String   @unique
+  content     Json
+  integrity   String
+  publishedAt DateTime @default(now())
+}
+
+model CoachingDisclaimer {
+  id          String   @id @default(uuid())
+  version     String
+  copyEn      String
+  copyAr      String
+  integrity   String
+  publishedAt DateTime @default(now())
+
+  @@unique([version])
 }
 
 // ───────────────────────── Safety (US6) ───────────────────────────

@@ -6,6 +6,7 @@ import { AssessmentController } from './assessment.controller';
 import { AssessmentDeletionService } from './assessment-deletion.service';
 import { AssessmentAnswerStore } from './assessment-answer-store.service';
 import { AssessmentLifecycleService } from './assessment-lifecycle.service';
+import { AssessmentResultService } from './assessment-result.service';
 import { AssessmentSubmitService } from './assessment-submit.service';
 import { ASSESSMENT_DELETION_PORT } from './ports/assessment-deletion.port';
 import { ScoringService } from './scoring.service';
@@ -27,10 +28,11 @@ import { ScoringService } from './scoring.service';
     ScoringService,
     AssessmentAnswerStore,
     AssessmentLifecycleService,
+    AssessmentResultService,
     AssessmentSubmitService,
     AssessmentDeletionService,
     { provide: ASSESSMENT_DELETION_PORT, useExisting: AssessmentDeletionService },
   ],
-  exports: [ASSESSMENT_DELETION_PORT],
+  exports: [ASSESSMENT_DELETION_PORT, AssessmentResultService],
 })
 export class AssessmentModule {}

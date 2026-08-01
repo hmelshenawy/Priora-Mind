@@ -5,6 +5,7 @@ import {
 import {
   type ResultDomainScore,
   type ResultResponse,
+  type ScoredResultDto,
 } from './assessment.dto';
 import type { Sq01Code, Sq02Code, Sq03Code } from '../safety/safety-definition';
 import type { ClassifierDomainScore } from '../safety/safety-classifier';
@@ -31,6 +32,7 @@ export interface SavedAnswer {
  *  mock returns unknown) onto which the typed ResultResponse is mapped. */
 export interface StoredResultRow {
   id: string;
+  assessmentId?: string;
   definitionVersion: string;
   domainScores: unknown;
   strongestDomain: string;
@@ -132,5 +134,18 @@ export function toResultResponse(row: StoredResultRow): ResultResponse {
       ranking: Record<string, number>;
     },
     goal_free_text: (row.goalFreeText as Record<string, unknown> | null) ?? null,
+  };
+}
+
+export function toScoredResultDto(row: StoredResultRow & { assessmentId: string }): ScoredResultDto {
+  return {
+    resultId: row.id,
+    assessmentId: row.assessmentId,
+    definitionVersion: row.definitionVersion,
+    domainScores: row.domainScores as Record<string, unknown>,
+    strongestDomain: row.strongestDomain as DomainCode,
+    supportDomain: row.supportDomain as DomainCode,
+    selectedPriorities: row.selectedPriorities as { domains: DomainCode[]; ranking: Record<string, number> },
+    goalFreeText: (row.goalFreeText as Record<string, unknown> | null) ?? null,
   };
 }

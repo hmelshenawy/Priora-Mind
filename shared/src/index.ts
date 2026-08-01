@@ -33,3 +33,85 @@ export interface Bilingual {
   en: string;
   ar: string;
 }
+
+export type CoachingPlanStatus = 'PROPOSED' | 'ACTIVE' | 'COMPLETED';
+
+export type CoachingGenerationStatus =
+  | 'PENDING'
+  | 'GENERATING'
+  | 'READY'
+  | 'FAILED';
+
+export type ActionStatus = 'INCOMPLETE' | 'COMPLETE';
+
+export interface CoachingPlanProgress {
+  completed: number;
+  total: number;
+}
+
+export interface CoachingPlanSource {
+  assessment_id: string;
+  result_id: string;
+  definition_version: string;
+  library_version: string;
+  disclaimer_version: string;
+  prompt_version?: string;
+}
+
+export interface CoachingFocusAreaDto {
+  id: string;
+  domain: string;
+  source: 'priority' | 'support' | 'lowest_band';
+  position: number;
+  reason: Bilingual;
+}
+
+export interface CoachingGoalDto {
+  id: string;
+  focus_area_id: string;
+  library_key: string;
+  position: number;
+  copy: Bilingual;
+}
+
+export interface CoachingActionDto {
+  id: string;
+  focus_area_id: string;
+  goal_id: string | null;
+  library_key: string;
+  position: number;
+  pacing_label: Bilingual | null;
+  copy: Bilingual;
+  status: ActionStatus;
+  version?: number;
+}
+
+export interface CoachingPlanResponse {
+  plan_id: string;
+  plan_version: number;
+  generationStatus: 'READY';
+  planStatus: CoachingPlanStatus;
+  source: CoachingPlanSource;
+  title: Bilingual;
+  summary: Bilingual;
+  disclaimer: Bilingual;
+  focus_areas: CoachingFocusAreaDto[];
+  goals: CoachingGoalDto[];
+  actions: CoachingActionDto[];
+  progress: CoachingPlanProgress;
+}
+
+export interface GenerationStatusResponse {
+  plan_id: string;
+  generationStatus: Exclude<CoachingGenerationStatus, 'READY'>;
+}
+
+export interface AcceptPlanResponse {
+  plan_id: string;
+  planStatus: CoachingPlanStatus;
+}
+
+export interface UpdateActionBody {
+  status: ActionStatus;
+  expected_version?: number;
+}

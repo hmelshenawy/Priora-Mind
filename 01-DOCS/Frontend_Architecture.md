@@ -100,9 +100,12 @@ src/
 
 ## Coaching
 
+-   Dashboard coaching-plan experience
+-   Async generation and polling states
+-   Explicit plan acceptance
 -   Plan Details
 -   Goals
--   Exercises
+-   Action steps
 -   Progress
 
 ## Session
@@ -131,7 +134,11 @@ Protected onboarding journey (onboarding-state-gated, US1–US6):
 - /safety/hold - SAFETY_HOLD page + re-entry (Safety Matrix §9)
 
 Protected post-onboarding:
-- /dashboard - post-onboarding transition point (placeholder, US7)
+- /dashboard - coaching-plan experience: starts or resumes async plan
+  generation, polls while `generationStatus` is `PENDING` or
+  `GENERATING`, renders `READY` plans in `PROPOSED` state with explicit
+  accept control, renders `ACTIVE`/`COMPLETED` progress states, and shows a
+  fail-closed unavailable/retry state for `FAILED` or `PLAN_UNAVAILABLE`.
 - /profile - authenticated profile view/edit
 
 Future (out of MVP scope, see §17): - /plans - /plans/:id - /sessions - /sessions/:id

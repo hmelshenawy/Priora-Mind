@@ -15,6 +15,16 @@ const DEFAULT_BASE_URL =
   process.env.NEXT_PUBLIC_API_BASE_URL ?? 'http://localhost:3000';
 
 const REFRESH_PATH = '/api/v1/auth/refresh';
+/**
+ * The login endpoint is UNAUTHENTICATED — a 401 here is a credentials rejection
+ * (`INVALID_CREDENTIALS`), not an expired access token. The transparent refresh
+ * path below is meant for authenticated calls whose access token has expired; if
+ * it ran on /login it would try to refresh (always failing when there is no valid
+ * refresh cookie) and then throw `UNAUTHENTICATED`, swallowing the backend's
+ * `INVALID_CREDENTIALS` code so the login form could never show an
+ * invalid-credentials state. Excluding this path lets the real error surface.
+ */
+const LOGIN_PATH = '/api/v1/auth/login';
 
 export class ApiError extends Error {
   constructor(
@@ -30,6 +40,8 @@ export class ApiError extends Error {
      * route via `routeForStep` so a blocked user is redirected to the correct
      * unfinished step — not a hardcoded one. */
     public readonly nextStep?: string,
+    public readonly retryable?: boolean,
+    public readonly reason?: string,
   ) {
     super(message);
     this.name = 'ApiError';
@@ -57,6 +69,8 @@ async function parseError(res: Response): Promise<ApiError> {
   let fields: { path: string; message: string }[] | undefined;
   let copy: { en: string; ar: string } | undefined;
   let nextStep: string | undefined;
+  let retryable: boolean | undefined;
+  let reason: string | undefined;
   try {
     const body = await res.json();
     const err = body?.error ?? body;
@@ -69,10 +83,12 @@ async function parseError(res: Response): Promise<ApiError> {
     }
     // US8 (FR-033): capture the unfinished step name from ONBOARDING_STEP_BLOCKED.
     if (typeof err?.next === 'string') nextStep = err.next;
+    if (typeof err?.retryable === 'boolean') retryable = err.retryable;
+    if (typeof err?.reason === 'string') reason = err.reason;
   } catch {
     // Non-JSON error body — keep defaults; never expose raw body text.
   }
-  return new ApiError(res.status, code, message, fields, copy, nextStep);
+  return new ApiError(res.status, code, message, fields, copy, nextStep, retryable, reason);
 }
 
 async function refreshAccessToken(): Promise<boolean> {
@@ -114,7 +130,7 @@ export async function apiFetch<T>(
     },
   });
 
-  if (res.status === 401 && !_retry) {
+  if (res.status === 401 && !_retry && path !== LOGIN_PATH) {
     const refreshed = await refreshAccessToken();
     if (refreshed) {
       return apiFetch<T>(path, { ...options, _retry: true });

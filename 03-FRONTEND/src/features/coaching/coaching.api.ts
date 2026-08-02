@@ -2,6 +2,8 @@ import type {
   AcceptPlanResponse,
   CoachingPlanResponse,
   GenerationStatusResponse,
+  UpdateActionBody,
+  UpdateActionResponse,
 } from '@priora/shared-types';
 import { ApiService } from '../../services/api';
 
@@ -20,6 +22,10 @@ export class CoachingApiService extends ApiService {
 
   acceptPlan(): Promise<AcceptPlanResponse> {
     return this.post<AcceptPlanResponse>(`${C}/accept`, {});
+  }
+
+  updateAction(actionId: string, body: UpdateActionBody): Promise<UpdateActionResponse> {
+    return this.patch<UpdateActionResponse>(`${C}/actions/${actionId}`, body);
   }
 }
 

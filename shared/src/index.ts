@@ -115,3 +115,9 @@ export interface UpdateActionBody {
   status: ActionStatus;
   expected_version?: number;
 }
+
+export interface UpdateActionResponse {
+  action: { id: string; status: ActionStatus; version: number };
+  progress: CoachingPlanProgress;
+  plan_status: CoachingPlanStatus;
+}

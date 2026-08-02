@@ -1,4 +1,4 @@
-import { Injectable } from '@nestjs/common';
+import { Inject, Injectable, Optional } from '@nestjs/common';
 import { COACHING_DISCLAIMER_V1, approvedDisclaimerContentAvailable, coachingDisclaimerIntegrity } from './coaching-disclaimer';
 import { COACHING_LIBRARY_V1, approvedLibraryContentAvailable, coachingLibraryIntegrity, type CoachingLibraryContent } from './coaching-library';
 import type { ScoredResultDto } from '../assessment/assessment.dto';
@@ -6,6 +6,7 @@ import type { GroundingBundle } from './ports/coaching-llm.port';
 import { COACHING_PLAN_PROMPT_TEMPLATE } from '../ai/prompt-templates/prompt-templates';
 import { PrismaService } from '../../prisma/prisma.service';
 import { PlanUnavailableException } from './coaching.errors';
+import { RAG_CLIENT_PORT, type RagClientPort } from './rag/rag-client.service';
 
 type Db = Record<string, { [method: string]: (...args: unknown[]) => unknown }>;
 
@@ -35,7 +36,10 @@ export function buildFocusAreaEvidence(result: ScoredResultDto): GroundingBundle
 
 @Injectable()
 export class CoachingGroundingService {
-  constructor(private readonly prisma: PrismaService) {}
+  constructor(
+    private readonly prisma: PrismaService,
+    @Optional() @Inject(RAG_CLIENT_PORT) private readonly rag?: RagClientPort,
+  ) {}
 
   get db(): Db {
     return this.prisma as unknown as Db;
@@ -60,7 +64,8 @@ export class CoachingGroundingService {
     if (!approvedLibraryContentAvailable() || !approvedDisclaimerContentAvailable()) {
       throw new PlanUnavailableException({ reason: 'CONTENT_GATE_UNRESOLVED' });
     }
-    return {
+    const focusAreaEvidence = buildFocusAreaEvidence(result);
+    const bundle: GroundingBundle = {
       assessment: {
         resultId: result.resultId,
         assessmentId: result.assessmentId,
@@ -70,7 +75,7 @@ export class CoachingGroundingService {
         supportDomain: result.supportDomain,
         selectedPriorities: result.selectedPriorities,
       },
-      focusAreaEvidence: buildFocusAreaEvidence(result),
+      focusAreaEvidence,
       profile,
       libraryVersion: COACHING_LIBRARY_V1.version,
       library,
@@ -78,6 +83,34 @@ export class CoachingGroundingService {
       disclaimer,
       promptVersion: COACHING_PLAN_PROMPT_TEMPLATE.version,
       instructions: [...COACHING_PLAN_PROMPT_TEMPLATE.instructions],
+    };
+    if (!this.rag) return bundle;
+    const correlationId = `coaching-${result.resultId}`;
+    const ragResult = await this.rag.retrieve({
+      generation_attempt_id: correlationId,
+      assessment_result_id: result.resultId,
+      assessment_definition_version: result.definitionVersion,
+      focus_areas: focusAreaEvidence.map((area) => area.domain),
+      support_domain: result.supportDomain,
+      strongest_domain: result.strongestDomain,
+      priority_codes: Object.keys(result.selectedPriorities.ranking ?? {}),
+      language: 'mixed',
+      safety_exclusions: ['crisis', 'high_risk', 'medical', 'medication'],
+      top_k: 6,
+      score_threshold: 0.7,
+      max_context_chars: 4000,
+    }, correlationId);
+    if (ragResult.status !== 'ok' || ragResult.chunks.length === 0) {
+      throw new PlanUnavailableException({ reason: ragResult.error_code ?? 'INSUFFICIENT_GROUNDING' });
+    }
+    return {
+      ...bundle,
+      ragContext: {
+        retrieval_status: ragResult.status,
+        chunks: ragResult.chunks,
+        allowed_chunk_ids: ragResult.chunks.map((chunk) => chunk.chunk_id),
+        correlation_id: ragResult.correlation_id,
+      },
     };
   }
 }

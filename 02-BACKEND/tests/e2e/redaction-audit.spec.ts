@@ -20,6 +20,7 @@ import { FakeEmailAdapter } from '../../src/modules/auth/ports/fake-email.adapte
 import { InMemoryPrisma } from '../helpers/in-memory-prisma';
 import { NOTICE_VERSION_V1 } from '../../prisma/seed/notice-versions';
 import { CURRENT_STATE_QUESTIONS } from '../../src/modules/assessment/assessment-definition';
+import { toSafeLogContext } from '../../src/common/redact';
 
 /**
  * T085 — Redaction audit (FR-030, SC-010, research D7). The deletion/retention
@@ -266,6 +267,58 @@ describe('Redaction audit — deletion/retention telemetry (e2e)', () => {
     for (const s of SENTINELS) {
       expect(out).not.toContain(s);
     }
+  });
+
+  it('coaching telemetry surfaces exclude plan/progress copy and generation rows store operational metadata only (SC-010)', () => {
+    const planCopySentinels = ['COACH_TITLE_SENTINEL', 'COACH_ACTION_SENTINEL', 'COACH_DISCLAIMER_SENTINEL'];
+    const plan = prisma.coachingPlan.create({ data: {
+      userId: 'user-coaching-redaction',
+      sourceAssessmentId: 'assessment-redaction',
+      sourceResultId: 'result-redaction',
+      definitionVersion: '1.0',
+      libraryVersion: '1.0',
+      disclaimerVersion: '1.0',
+      promptVersion: '1.0',
+      generationStatus: 'READY',
+      planStatus: 'ACTIVE',
+      title: { en: planCopySentinels[0], ar: 'عنوان' },
+      summary: { en: 'Summary', ar: 'ملخص' },
+      disclaimer: { en: planCopySentinels[2], ar: 'تنبيه' },
+    } });
+    prisma.coachingPlanGeneration.create({ data: {
+      planId: plan.id,
+      attempt: 1,
+      provider: 'fake',
+      modelId: 'fake-model',
+      promptVersion: '1.0',
+      sourceAssessmentId: 'assessment-redaction',
+      sourceResultId: 'result-redaction',
+      definitionVersion: '1.0',
+      libraryVersion: '1.0',
+      disclaimerVersion: '1.0',
+      status: 'READY',
+      validationOutcome: { result: 'VALID', reasons: [] },
+      tokenUsage: { prompt: 0, completion: 0, total: 0 },
+      latencyMs: 0,
+    } });
+
+    const generationJson = JSON.stringify(prisma.coachingPlanGeneration.findMany({ where: { planId: plan.id } }));
+    for (const sentinel of planCopySentinels) expect(generationJson).not.toContain(sentinel);
+    expect(generationJson.toLowerCase()).not.toContain('chain');
+    expect(generationJson.toLowerCase()).not.toContain('thought');
+    expect(generationJson).not.toContain('rawAnswer');
+
+    const safe = toSafeLogContext({
+      module: 'coaching',
+      route: 'PATCH /coaching/plan/actions/:action_id',
+      plan_title: planCopySentinels[0],
+      progress: '1/1',
+      action_copy: planCopySentinels[1],
+      safety_level: 'DISTRESS',
+    });
+    const safeJson = JSON.stringify(safe);
+    expect(safe).toEqual({ module: 'coaching', route: 'PATCH /coaching/plan/actions/:action_id' });
+    for (const sentinel of [...planCopySentinels, 'DISTRESS']) expect(safeJson).not.toContain(sentinel);
   });
 });
 

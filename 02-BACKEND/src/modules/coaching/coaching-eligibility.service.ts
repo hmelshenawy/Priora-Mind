@@ -5,7 +5,8 @@ import type { ScoredResultDto } from '../assessment/assessment.dto';
 import { OnboardingGuardService, type OnboardingGuardContext } from '../profile/onboarding.guard';
 import { SafetyService } from '../safety/safety.service';
 import { PrismaService } from '../../prisma/prisma.service';
-import { NoCurrentPlanException, PlanUnavailableException, SafetyHoldException } from './coaching.errors';
+import { ResultNotFoundException } from '../assessment/assessment.errors';
+import { NoCurrentPlanException, SafetyHoldException } from './coaching.errors';
 
 type Db = Record<string, { [method: string]: (...args: unknown[]) => unknown }>;
 
@@ -27,9 +28,12 @@ export class CoachingEligibilityService {
     const ctx = await this.contextFor(userId);
     this.guard.assertCanEnter('dashboard', ctx);
     const level = await this.safety.currentLevel(userId);
-    if (level && level !== 'NORMAL' && level !== 'DISTRESS') throw new SafetyHoldException();
+    if (level && level !== 'NORMAL' && level !== 'DISTRESS') {
+      const safetyRoute = await this.safety.currentRoute(userId);
+      throw new SafetyHoldException(safetyRoute ? { safety_route: safetyRoute } : {});
+    }
     const result = await this.results.getScoredResult(userId);
-    if (!result) throw new PlanUnavailableException({ reason: 'RESULT_NOT_FOUND' });
+    if (!result) throw new ResultNotFoundException();
     return result;
   }
 

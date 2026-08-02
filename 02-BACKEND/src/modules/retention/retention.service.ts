@@ -8,6 +8,7 @@ import {
   ASSESSMENT_DELETION_PORT,
   type AssessmentDeletionPort,
 } from '../assessment/ports/assessment-deletion.port';
+import { COACHING_DELETION_PORT, type CoachingDeletionPort } from '../coaching/ports/coaching-deletion.port';
 import { SAFETY_DELETION_PORT, type SafetyDeletionPort } from '../safety/ports/safety-deletion.port';
 
 /**
@@ -41,6 +42,7 @@ export class RetentionService {
     @Inject(AUTH_DELETION_PORT) private readonly auth: AuthDeletionPort,
     @Inject(PROFILE_DELETION_PORT) private readonly profile: ProfileDeletionPort,
     @Inject(ASSESSMENT_DELETION_PORT) private readonly assessment: AssessmentDeletionPort,
+    @Inject(COACHING_DELETION_PORT) private readonly coaching: CoachingDeletionPort,
     @Inject(SAFETY_DELETION_PORT) private readonly safety: SafetyDeletionPort,
   ) {}
 
@@ -61,6 +63,7 @@ export class RetentionService {
       },
       profile: { onboardingBefore: daysAgo(now, INACTIVITY_DAYS) },
       assessment: { incompleteBefore: daysAgo(now, INACTIVITY_DAYS) },
+      coaching: {},
       safety: { incompleteBefore: daysAgo(now, INACTIVITY_DAYS) },
     };
   }
@@ -105,6 +108,7 @@ export class RetentionService {
       assessment: await this.runCategory('assessment', window, () =>
         this.assessment.deleteExpired(c.assessment),
       ),
+      coaching: await this.runCategory('coaching', window, () => this.coaching.deleteExpired(c.coaching)),
       safety: await this.runCategory('safety', window, () => this.safety.deleteExpired(c.safety)),
       // No consent cutoff on the scheduled cron: superseded consent rows are retained
       // while the account exists and removed on account deletion (Consent §8).
@@ -132,7 +136,7 @@ export class RetentionService {
         }),
       );
       return counters;
-    } catch (err) {
+    } catch {
       this.logger.warn(
         toSafeLogContext({
           window,
@@ -184,6 +188,7 @@ export type CategoryCounts = {
   auth: CategoryCounters;
   profile: CategoryCounters;
   assessment: CategoryCounters;
+  coaching: CategoryCounters;
   safety: CategoryCounters;
   consent: CategoryCounters;
 };
@@ -192,6 +197,7 @@ export type ScheduledCutoffs = {
   auth: { unverifiedAccountBefore: Date; preConsentAccountBefore: Date };
   profile: { onboardingBefore: Date };
   assessment: { incompleteBefore: Date };
+  coaching: Record<string, never>;
   safety: { incompleteBefore: Date };
 };
 
@@ -199,12 +205,13 @@ const EMPTY_COUNTS: CategoryCounts = {
   auth: { deleted: 0, errors: 0 },
   profile: { deleted: 0, errors: 0 },
   assessment: { deleted: 0, errors: 0 },
+  coaching: { deleted: 0, errors: 0 },
   safety: { deleted: 0, errors: 0 },
   consent: { deleted: 0, errors: 0 },
 };
 
 function sumErrors(counts: CategoryCounts): number {
-  return counts.auth.errors + counts.profile.errors + counts.assessment.errors + counts.safety.errors + counts.consent.errors;
+  return counts.auth.errors + counts.profile.errors + counts.assessment.errors + counts.coaching.errors + counts.safety.errors + counts.consent.errors;
 }
 
 function errName(err: unknown): string {

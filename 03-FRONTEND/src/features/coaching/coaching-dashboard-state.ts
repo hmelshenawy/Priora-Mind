@@ -12,6 +12,8 @@ export type CoachingDashboardView =
   | 'noAssessment'
   | 'safetyHold'
   | 'ineligible'
+  | 'notReady'
+  | 'notActive'
   | 'readyProposed'
   | 'readyActive'
   | 'readyCompleted'
@@ -43,6 +45,8 @@ export function resolveDashboardView(input: {
     if (error.code === 'RESULT_NOT_FOUND' || error.reason === 'RESULT_NOT_FOUND') return 'noAssessment';
     if (error.code === 'SAFETY_HOLD') return 'safetyHold';
     if (error.code === 'ONBOARDING_STEP_BLOCKED') return 'ineligible';
+    if (error.code === 'PLAN_NOT_READY') return 'notReady';
+    if (error.code === 'PLAN_NOT_ACTIVE') return 'notActive';
     if (error.code === 'PLAN_UNAVAILABLE') return error.retryable ? 'failedRetryable' : 'unavailable';
     return 'error';
   }

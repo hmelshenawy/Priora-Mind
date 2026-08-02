@@ -267,31 +267,54 @@ Responsibilities: - Text generation - Structured output - Streaming
 
 # 9. Knowledge Architecture
 
-Knowledge Base: - English only
+Knowledge Base: - Arabic - English
 
 Conversation: - Arabic - English
 
 Response: - Same language as user
 
+Coaching knowledge retrieval is owned by the standalone `04-RAG/`
+service. The RAG service owns document/source registry, immutable source
+versions, lifecycle state (`DRAFT`, `APPROVED`, `ACTIVE`, `SUPERSEDED`,
+`REVOKED`), ingestion, cleaning, chunking, embeddings, Qdrant access,
+active snapshots, retrieval audits, evaluation datasets, and RAG
+operational metrics.
+
+NestJS communicates with RAG only through stable authenticated service
+contracts. NestJS MUST NOT connect directly to Qdrant or depend on Qdrant
+payload schema. Frontend clients MUST NOT call the RAG service directly.
+
 Knowledge Source:
 
-Books
+PDF / Markdown approved coaching sources
 
 ↓
 
-Chunking
+Document registry + immutable source versions
 
 ↓
 
-Embedding
+Cleaning + deterministic chunking
 
 ↓
 
-Qdrant
+Embedding provider port
 
 ↓
 
-Retriever
+Qdrant vector-store adapter inside RAG
+
+↓
+
+Active knowledge snapshot
+
+↓
+
+Stable RAG retrieval API
+
+↓
+
+NestJS Coaching generation
 
 ------------------------------------------------------------------------
 

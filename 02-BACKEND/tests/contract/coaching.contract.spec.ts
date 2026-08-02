@@ -3,10 +3,12 @@ import { GUARDS_METADATA } from '@nestjs/common/constants';
 import { describe, expect, it, vi } from 'vitest';
 import { InMemoryPrisma } from '../helpers/in-memory-prisma';
 import { CoachingController } from '../../src/modules/coaching/coaching.controller';
+import { CoachingActionService } from '../../src/modules/coaching/coaching-action.service';
 import { CoachingPlanService } from '../../src/modules/coaching/coaching-plan.service';
-import { NoCurrentPlanException, PlanNotReadyException, PlanUnavailableException } from '../../src/modules/coaching/coaching.errors';
+import { ActionConflictException, ActionResultNotFoundException, NoCurrentPlanException, PlanNotActiveException, PlanNotReadyException, PlanUnavailableException, SafetyHoldException } from '../../src/modules/coaching/coaching.errors';
 import { EmailVerifiedGuard } from '../../src/modules/auth/guards/email-verified.guard';
 import { JwtAuthGuard } from '../../src/modules/auth/guards/jwt-auth.guard';
+import { ResultNotFoundException } from '../../src/modules/assessment/assessment.errors';
 import type { ScoredResultDto } from '../../src/modules/assessment/assessment.dto';
 
 const result1: ScoredResultDto = {
@@ -27,8 +29,9 @@ function setup(initialResult = result1) {
   const eligibility = { assertEligible: vi.fn().mockResolvedValue(initialResult) };
   const generation = { start: vi.fn(), reclaimIfStale: vi.fn() };
   const service = new CoachingPlanService(db as never, eligibility as never, generation as never);
-  const controller = new CoachingController(service);
-  return { db, eligibility, generation, service, controller };
+  const actions = new CoachingActionService(db as never, eligibility as never);
+  const controller = new CoachingController(service, actions);
+  return { db, eligibility, generation, service, actions, controller };
 }
 
 async function callStart(controller: CoachingController) {
@@ -176,9 +179,103 @@ describe('coaching controller contract', () => {
     expect(db.coachingPlan.count({ where: { userId: 'user-1', isCurrent: true } })).toBe(1);
   });
 
+  it('blocks incomplete onboarding, SAFETY_HOLD, and missing scored results before generation', async () => {
+    const incomplete = setup();
+    incomplete.eligibility.assertEligible.mockRejectedValue(new HttpException({ error: { code: 'ONBOARDING_STEP_BLOCKED', next: '/assessment' } }, 403));
+    await expect(callStart(incomplete.controller)).rejects.toBeInstanceOf(HttpException);
+    expect(incomplete.generation.start).not.toHaveBeenCalled();
+    expect(incomplete.db.coachingPlan.count({ where: { userId: 'user-1' } })).toBe(0);
+
+    const safety = setup();
+    safety.eligibility.assertEligible.mockRejectedValue(new SafetyHoldException({ safety_route: { path: '/safety/hold' } }));
+    await expect(callStart(safety.controller)).rejects.toBeInstanceOf(SafetyHoldException);
+    expect(safety.generation.start).not.toHaveBeenCalled();
+    expect(safety.db.coachingPlan.count({ where: { userId: 'user-1' } })).toBe(0);
+
+    const missing = setup();
+    missing.eligibility.assertEligible.mockRejectedValue(new ResultNotFoundException());
+    await expect(callStart(missing.controller)).rejects.toBeInstanceOf(ResultNotFoundException);
+    expect(missing.generation.start).not.toHaveBeenCalled();
+    expect(missing.db.coachingPlan.count({ where: { userId: 'user-1' } })).toBe(0);
+  });
+
+  it('SAFETY_HOLD blocks accept and PATCH on an existing ready plan', async () => {
+    const { db, controller, eligibility } = setup();
+    const started = await callStart(controller);
+    const planId = String(started.body.plan_id);
+    publishReady(db, planId, 'ACTIVE');
+    const action = db.actionStep.findMany({ where: { planId } })[0];
+    eligibility.assertEligible.mockRejectedValue(new SafetyHoldException({ safety_route: { path: '/safety/hold' } }));
+
+    await expect(controller.accept({ user: { sub: 'user-1' } } as never)).rejects.toBeInstanceOf(SafetyHoldException);
+    await expect(controller.updateAction({ user: { sub: 'user-1' } } as never, action.id, { status: 'COMPLETE' })).rejects.toBeInstanceOf(SafetyHoldException);
+    expect(db.coachingPlanStore.get(planId)).toMatchObject({ generationStatus: 'READY', planStatus: 'ACTIVE' });
+  });
+
   it('enforces ownership through JWT user id on the service/controller path', async () => {
     const { db, controller } = setup();
     db.coachingPlan.create({ data: { userId: 'other-user', sourceAssessmentId: 'a', sourceResultId: 'r', definitionVersion: '1.0', libraryVersion: '1.0', disclaimerVersion: '1.0', promptVersion: '1.0' } });
     await expect(controller.get({ user: { sub: 'user-1' } } as never, { status: vi.fn() } as never)).rejects.toBeInstanceOf(HttpException);
+  });
+
+  it('GET is scoped to the caller current plan and client ownership fields are ignored', async () => {
+    const { db, controller } = setup();
+    const own = await callStart(controller);
+    const ownId = String(own.body.plan_id);
+    publishReady(db, ownId, 'ACTIVE');
+    const foreign = db.coachingPlan.create({ data: { userId: 'other-user', sourceAssessmentId: 'foreign-a', sourceResultId: 'foreign-r', definitionVersion: '1.0', libraryVersion: '1.0', disclaimerVersion: '1.0', promptVersion: '1.0', generationStatus: 'READY', planStatus: 'ACTIVE', title: { en: 'Foreign', ar: 'أجنبي' }, summary: { en: 'Foreign', ar: 'أجنبي' }, disclaimer: { en: 'Foreign', ar: 'أجنبي' } } });
+
+    const got = await callGet(controller);
+    expect(got.body.plan_id).toBe(ownId);
+    expect(got.body.plan_id).not.toBe(foreign.id);
+    await expect(controller.start({ user: { sub: 'user-1' }, body: { userId: 'other-user', plan_id: foreign.id } } as never, { status: vi.fn() } as never)).resolves.toMatchObject({ plan_id: ownId });
+  });
+
+  it('PATCH rejects non-ready and proposed plans with stable conflict codes', async () => {
+    const { db, controller } = setup();
+    const started = await callStart(controller);
+    const planId = String(started.body.plan_id);
+    const focus = db.focusArea.create({ data: { planId, domain: 'stress', source: 'priority', position: 1, reason: { en: 'Reason', ar: 'سبب' } } });
+    const action = db.actionStep.create({ data: { planId, focusAreaId: focus.id, goalId: null, position: 1, copy: { en: 'Action', ar: 'فعل' }, libraryKey: 'action.stress' } });
+    await expect(controller.updateAction({ user: { sub: 'user-1' } } as never, action.id, { status: 'COMPLETE' })).rejects.toBeInstanceOf(PlanNotReadyException);
+    publishReady(db, planId, 'PROPOSED');
+    await expect(controller.updateAction({ user: { sub: 'user-1' } } as never, action.id, { status: 'COMPLETE' })).rejects.toBeInstanceOf(PlanNotActiveException);
+    db.coachingPlan.update({ where: { id: planId }, data: { generationStatus: 'FAILED', planStatus: null } });
+    await expect(controller.updateAction({ user: { sub: 'user-1' } } as never, action.id, { status: 'COMPLETE' })).rejects.toBeInstanceOf(PlanNotReadyException);
+  });
+
+  it('PATCH updates action status, progress, and planStatus without touching generationStatus', async () => {
+    const { db, controller } = setup();
+    const started = await callStart(controller);
+    const planId = String(started.body.plan_id);
+    publishReady(db, planId, 'ACTIVE');
+    const actions = db.actionStep.findMany({ where: { planId } });
+    const result = await controller.updateAction({ user: { sub: 'user-1' } } as never, actions[0].id, { status: 'COMPLETE', expected_version: 1 });
+    expect(result).toMatchObject({ action: { id: actions[0].id, status: 'COMPLETE', version: 2 }, progress: { completed: 1, total: 1 }, plan_status: 'COMPLETED' });
+    expect(db.coachingPlanStore.get(planId)).toMatchObject({ generationStatus: 'READY', planStatus: 'COMPLETED' });
+    const reopen = await controller.updateAction({ user: { sub: 'user-1' } } as never, actions[0].id, { status: 'INCOMPLETE', expected_version: 2 });
+    expect(reopen).toMatchObject({ action: { status: 'INCOMPLETE', version: 3 }, progress: { completed: 0, total: 1 }, plan_status: 'ACTIVE' });
+    expect(db.coachingPlanStore.get(planId)!.generationStatus).toBe('READY');
+  });
+
+  it('PATCH is idempotent for same-status updates and detects stale expected_version conflicts', async () => {
+    const { db, controller } = setup();
+    const started = await callStart(controller);
+    const planId = String(started.body.plan_id);
+    publishReady(db, planId, 'ACTIVE');
+    const action = db.actionStep.findMany({ where: { planId } })[0];
+    const same = await controller.updateAction({ user: { sub: 'user-1' } } as never, action.id, { status: 'INCOMPLETE', expected_version: 1 });
+    expect(same.action.version).toBe(1);
+    await controller.updateAction({ user: { sub: 'user-1' } } as never, action.id, { status: 'COMPLETE', expected_version: 1 });
+    await expect(controller.updateAction({ user: { sub: 'user-1' } } as never, action.id, { status: 'INCOMPLETE', expected_version: 1 })).rejects.toBeInstanceOf(ActionConflictException);
+  });
+
+  it('PATCH returns ACTION_NOT_FOUND for unknown or cross-user action ids', async () => {
+    const { db, controller } = setup();
+    const otherPlan = db.coachingPlan.create({ data: { userId: 'other-user', sourceAssessmentId: 'a', sourceResultId: 'r', definitionVersion: '1.0', libraryVersion: '1.0', disclaimerVersion: '1.0', promptVersion: '1.0', generationStatus: 'READY', planStatus: 'ACTIVE' } });
+    const focus = db.focusArea.create({ data: { planId: otherPlan.id, domain: 'stress', source: 'priority', position: 1, reason: { en: 'Reason', ar: 'سبب' } } });
+    const foreign = db.actionStep.create({ data: { planId: otherPlan.id, focusAreaId: focus.id, goalId: null, position: 1, copy: { en: 'Action', ar: 'فعل' }, libraryKey: 'action.other' } });
+    await expect(controller.updateAction({ user: { sub: 'user-1' } } as never, foreign.id, { status: 'COMPLETE' })).rejects.toBeInstanceOf(ActionResultNotFoundException);
+    await expect(controller.updateAction({ user: { sub: 'user-1' } } as never, 'missing-action', { status: 'COMPLETE' })).rejects.toBeInstanceOf(ActionResultNotFoundException);
   });
 });

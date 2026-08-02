@@ -1,7 +1,8 @@
 import { HttpException } from '@nestjs/common';
 import { describe, expect, it, vi } from 'vitest';
 import { CoachingEligibilityService } from '../../src/modules/coaching/coaching-eligibility.service';
-import { PlanUnavailableException, SafetyHoldException } from '../../src/modules/coaching/coaching.errors';
+import { SafetyHoldException } from '../../src/modules/coaching/coaching.errors';
+import { ResultNotFoundException } from '../../src/modules/assessment/assessment.errors';
 
 const result = {
   resultId: 'result-1',
@@ -20,7 +21,7 @@ function service({ state = 'COMPLETED', safety = 'NORMAL', scored = result } = {
   const guard = { assertCanEnter: vi.fn((route: string, ctx: { onboardingState: string }) => {
     if (route === 'dashboard' && ctx.onboardingState !== 'COMPLETED') throw new HttpException({ error: { code: 'ONBOARDING_STEP_BLOCKED' } }, 403);
   }) };
-  const safetyService = { currentLevel: vi.fn().mockResolvedValue(safety) };
+  const safetyService = { currentLevel: vi.fn().mockResolvedValue(safety), currentRoute: vi.fn().mockResolvedValue({ path: '/safety/hold' }) };
   const results = { getScoredResult: vi.fn().mockResolvedValue(scored) };
   return {
     eligibility: new CoachingEligibilityService(prisma as never, consent as never, guard as never, safetyService as never, results as never),
@@ -49,7 +50,7 @@ describe('coaching eligibility rules', () => {
     await expect(service({ safety: 'CRISIS' }).eligibility.assertEligible('user-1')).rejects.toBeInstanceOf(SafetyHoldException);
   });
 
-  it('fails closed when no scored result exists', async () => {
-    await expect(service({ scored: null }).eligibility.assertEligible('user-1')).rejects.toBeInstanceOf(PlanUnavailableException);
+  it('returns RESULT_NOT_FOUND when no scored result exists', async () => {
+    await expect(service({ scored: null }).eligibility.assertEligible('user-1')).rejects.toBeInstanceOf(ResultNotFoundException);
   });
 });

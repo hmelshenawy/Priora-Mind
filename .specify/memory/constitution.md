@@ -234,6 +234,10 @@ Code MUST be clean, cohesive, well-organized, testable, understandable, and easy
 - Functions and methods SHOULD remain small and focused.
 - Public contracts and complex business rules MUST be documented where their intent is not evident from the code.
 - Refactoring MUST preserve behavior through relevant automated tests.
+- All files must not exceed 300 lines
+- avoid overengieeering. simplicty is important and mandatory
+- if classes not required do not use or create classes
+- single source of truth.
 
 #### File-size rule
 
@@ -267,6 +271,20 @@ Before a feature is considered complete, affected code MUST:
 Rationale: Priora Mind contains sensitive and evolving workflows. Clean boundaries and controlled file size reduce regression risk and keep the system maintainable.
 
 ---
+#### Simplicity and proportionality
+
+- The simplest design that fully satisfies the current approved requirements MUST be preferred.
+- Complexity MUST be proportional to current, demonstrated needs—not hypothetical future requirements.
+- A new abstraction, interface, protocol, factory, service layer, or wrapper MUST NOT be introduced unless it:
+  - has at least two current concrete uses or implementations; or
+  - isolates a genuine external boundary; or
+  - materially improves testability of business-critical behavior.
+- One implementation does not automatically require an interface.
+- Pass-through layers that add no validation, transformation, policy, orchestration, or boundary protection are prohibited.
+- Local synchronous workflows MUST remain synchronous unless concurrency solves a measured requirement.
+- Timeouts, retries, caching, queues, and background processing MUST only be introduced for a documented failure mode or performance requirement.
+- Testability MUST NOT introduce unnecessary production abstractions. Test-only fakes, fixtures, and helpers SHOULD remain in test code.
+- Existing abstractions MUST NOT be preserved solely for possible future use.
 
 ### IX. Testing and Verifiable Behavior
 

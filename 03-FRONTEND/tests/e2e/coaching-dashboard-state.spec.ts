@@ -10,6 +10,8 @@ test.describe('coaching dashboard state machine', () => {
     expect(resolveDashboardView({ error: { code: 'PLAN_UNAVAILABLE', reason: 'RESULT_NOT_FOUND' } })).toBe('noAssessment');
     expect(resolveDashboardView({ error: { code: 'SAFETY_HOLD' } })).toBe('safetyHold');
     expect(resolveDashboardView({ error: { code: 'ONBOARDING_STEP_BLOCKED' } })).toBe('ineligible');
+    expect(resolveDashboardView({ error: { code: 'PLAN_NOT_READY' } })).toBe('notReady');
+    expect(resolveDashboardView({ error: { code: 'PLAN_NOT_ACTIVE' } })).toBe('notActive');
   });
 
   test('polls only while pending or generating and stops on ready or failed', () => {

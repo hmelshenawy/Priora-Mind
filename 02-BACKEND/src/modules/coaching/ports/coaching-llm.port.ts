@@ -20,6 +20,22 @@ export interface GroundingBundle {
   disclaimer: BilingualText;
   promptVersion: string;
   instructions: string[];
+  ragContext?: {
+    retrieval_status: 'ok' | 'insufficient_grounding' | 'unavailable';
+    chunks: Array<{
+      chunk_id: string;
+      text: string;
+      source_id: string;
+      source_title: string;
+      source_type: 'pdf' | 'markdown';
+      citation_page?: number | null;
+      citation_heading?: string | null;
+      citation_section?: string | null;
+      text_hash: string;
+    }>;
+    allowed_chunk_ids: string[];
+    correlation_id: string;
+  };
 }
 
 export interface LlmPlanOutput {
@@ -38,6 +54,7 @@ export interface LlmPlanOutput {
     pacingLabel: BilingualText | null;
     copy: BilingualText;
   }>;
+  citations?: Array<{ chunk_id: string; source_id: string; text_hash: string }>;
   disclaimerReference: { version: string };
 }
 

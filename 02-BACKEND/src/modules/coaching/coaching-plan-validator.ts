@@ -65,6 +65,14 @@ export function validateLlmPlanOutput(
     if (!Number.isInteger(action.position) || action.position < 1) reasons.push('ACTION_POSITION_INVALID');
     if (action.pacingLabel !== null && !hasText(action.pacingLabel)) reasons.push('ACTION_PACING_BILINGUAL_REQUIRED');
   }
+  if (bundle.ragContext) {
+    const allowed = new Map(bundle.ragContext.chunks.map((chunk) => [chunk.chunk_id, chunk]));
+    for (const citation of output.citations ?? []) {
+      const chunk = allowed.get(citation.chunk_id);
+      if (!chunk) reasons.push('UNKNOWN_RAG_CITATION');
+      if (chunk && (chunk.source_id !== citation.source_id || chunk.text_hash !== citation.text_hash)) reasons.push('RAG_CITATION_METADATA_MISMATCH');
+    }
+  }
   const rendered = JSON.stringify(output);
   if (blockedTerms.some((term) => term.test(rendered))) reasons.push('CONCERNING_OUTPUT');
   if (output.disclaimerReference.version !== bundle.disclaimerVersion) reasons.push('DISCLAIMER_VERSION_MISMATCH');

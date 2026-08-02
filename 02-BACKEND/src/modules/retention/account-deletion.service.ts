@@ -7,6 +7,7 @@ import {
   ASSESSMENT_DELETION_PORT,
   type AssessmentDeletionPort,
 } from '../assessment/ports/assessment-deletion.port';
+import { COACHING_DELETION_PORT, type CoachingDeletionPort } from '../coaching/ports/coaching-deletion.port';
 import { SAFETY_DELETION_PORT, type SafetyDeletionPort } from '../safety/ports/safety-deletion.port';
 
 /**
@@ -44,6 +45,7 @@ export class AccountDeletionService {
     @Inject(AUTH_DELETION_PORT) private readonly auth: AuthDeletionPort,
     @Inject(PROFILE_DELETION_PORT) private readonly profile: ProfileDeletionPort,
     @Inject(ASSESSMENT_DELETION_PORT) private readonly assessment: AssessmentDeletionPort,
+    @Inject(COACHING_DELETION_PORT) private readonly coaching: CoachingDeletionPort,
     @Inject(SAFETY_DELETION_PORT) private readonly safety: SafetyDeletionPort,
   ) {}
 
@@ -72,6 +74,7 @@ export class AccountDeletionService {
       assessment: await this.run('assessment', confirmationId, () =>
         this.assessment.deleteAssessmentForUsers([userId]),
       ),
+      coaching: await this.run('coaching', confirmationId, () => this.coaching.deleteCoachingForUsers([userId])),
       safety: await this.run('safety', confirmationId, () => this.safety.deleteSafetyForUsers([userId])),
       profile: await this.run('profile', confirmationId, () => this.profile.deleteProfileForUsers([userId])),
       consent: await this.run('consent', confirmationId, () => this.auth.deleteConsentForUsers([userId])),
@@ -126,7 +129,7 @@ export class AccountDeletionService {
   ): Promise<CategoryCounters> {
     try {
       return await fn();
-    } catch (err) {
+    } catch {
       this.logger.warn(
         toSafeLogContext({ window, category, deleted_count: 0, error_count: 1, run_ms: 0 }),
       );
@@ -142,6 +145,7 @@ type AccountCategoryCounts = {
   auth: CategoryCounters;
   profile: CategoryCounters;
   assessment: CategoryCounters;
+  coaching: CategoryCounters;
   safety: CategoryCounters;
   consent: CategoryCounters;
 };
@@ -152,8 +156,8 @@ export type AccountDeletionOutcome = {
 };
 
 function sumErrors(c: AccountCategoryCounts): number {
-  return c.auth.errors + c.profile.errors + c.assessment.errors + c.safety.errors + c.consent.errors;
+  return c.auth.errors + c.profile.errors + c.assessment.errors + c.coaching.errors + c.safety.errors + c.consent.errors;
 }
 function totalCounts(c: AccountCategoryCounts): number {
-  return c.auth.deleted + c.profile.deleted + c.assessment.deleted + c.safety.deleted + c.consent.deleted;
+  return c.auth.deleted + c.profile.deleted + c.assessment.deleted + c.coaching.deleted + c.safety.deleted + c.consent.deleted;
 }

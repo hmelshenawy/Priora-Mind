@@ -90,6 +90,15 @@ describe('User-initiated account deletion (e2e)', () => {
     return [...prisma.userStore.values()].find((u) => u.email === em)!.id;
   }
 
+  function seedCoaching(userId: string) {
+    const plan = prisma.coachingPlan.create({ data: { userId, sourceAssessmentId: 'assessment-coaching', sourceResultId: `result-${userId}`, definitionVersion: '1.0', libraryVersion: '1.0', disclaimerVersion: '1.0', promptVersion: '1.0', generationStatus: 'READY', planStatus: 'ACTIVE', title: { en: 'Plan', ar: 'خطة' }, summary: { en: 'Summary', ar: 'ملخص' }, disclaimer: { en: 'Disclaimer', ar: 'تنبيه' } } });
+    const focus = prisma.focusArea.create({ data: { planId: plan.id, domain: 'stress', source: 'priority', position: 1, reason: { en: 'Reason', ar: 'سبب' } } });
+    const goal = prisma.goal.create({ data: { planId: plan.id, focusAreaId: focus.id, position: 1, copy: { en: 'Goal', ar: 'هدف' }, libraryKey: 'goal.stress' } });
+    prisma.actionStep.create({ data: { planId: plan.id, focusAreaId: focus.id, goalId: goal.id, position: 1, copy: { en: 'Action', ar: 'فعل' }, libraryKey: 'action.stress' } });
+    prisma.coachingPlanGeneration.create({ data: { planId: plan.id, attempt: 1, provider: 'fake', modelId: 'fake', promptVersion: '1.0', sourceAssessmentId: 'assessment-coaching', sourceResultId: `result-${userId}`, definitionVersion: '1.0', libraryVersion: '1.0', disclaimerVersion: '1.0', status: 'READY', validationOutcome: { result: 'VALID', reasons: [] } } });
+    return plan.id;
+  }
+
   beforeAll(async () => {
     prisma = new InMemoryPrisma();
     prisma.noticeVersionSet.create({
@@ -146,6 +155,7 @@ describe('User-initiated account deletion (e2e)', () => {
     const token = await verifiedAccessToken('delete-full@test.dev');
     await fullyOnboard(token);
     const id = userIdOf('delete-full@test.dev');
+    const planId = seedCoaching(id);
 
     // Sanity: all stores populated before deletion.
     expect(prisma.userStore.has(id)).toBe(true);
@@ -157,6 +167,8 @@ describe('User-initiated account deletion (e2e)', () => {
     expect(prisma.assessmentAnswerStore.size).toBeGreaterThan(0);
     expect([...prisma.assessmentResultStore.values()].some((r) => r.userId === id)).toBe(true);
     expect([...prisma.safetyEvaluationStore.values()].some((e) => e.userId === id)).toBe(true);
+    expect(prisma.coachingPlanStore.has(planId)).toBe(true);
+    expect(prisma.coachingPlanGeneration.findMany({ where: { planId } }).length).toBe(1);
 
     const res = await agent.delete(ME).set(auth(token));
     expect(res.status).toBe(200);
@@ -174,11 +186,17 @@ describe('User-initiated account deletion (e2e)', () => {
     expect(prisma.assessmentAnswerStore.size).toBe(0);
     expect([...prisma.assessmentResultStore.values()].some((r) => r.userId === id)).toBe(false);
     expect([...prisma.safetyEvaluationStore.values()].some((e) => e.userId === id)).toBe(false);
+    expect(prisma.coachingPlanStore.has(planId)).toBe(false);
+    expect(prisma.focusArea.findMany({ where: { planId } })).toHaveLength(0);
+    expect(prisma.goal.findMany({ where: { planId } })).toHaveLength(0);
+    expect(prisma.actionStep.findMany({ where: { planId } })).toHaveLength(0);
+    expect(prisma.coachingPlanGeneration.findMany({ where: { planId } })).toHaveLength(0);
 
     // A sanitized DeletionLog row was written.
     const row = [...prisma.deletionLogStore.values()][0];
     expect(row.runKind).toBe('account_deletion');
     expect(row.status).toBe('completed');
+    expect((row.categoryCounts as { coaching: { deleted: number; errors: number } }).coaching).toEqual({ deleted: 1, errors: 0 });
   });
 
   // ── idempotency ──────────────────────────────────────────────────────

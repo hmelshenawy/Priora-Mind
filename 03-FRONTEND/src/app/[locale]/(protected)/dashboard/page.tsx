@@ -2,6 +2,7 @@
 
 import { useEffect, useRef } from 'react';
 import { useLocale, useTranslations } from 'next-intl';
+import { useRouter } from '../../../../i18n/navigation';
 import { RequireOnboarding } from '../../../../components/guards/require-onboarding';
 import { ApiError } from '../../../../lib/api-client';
 import { CoachingPlanView } from '../../../../features/coaching/coaching-plan-view';
@@ -9,16 +10,20 @@ import {
   useAcceptPlanMutation,
   useCoachingPlanQuery,
   useStartGenerationMutation,
+  useUpdateActionStatusMutation,
 } from '../../../../features/coaching/coaching-hooks';
 import { resolveDashboardView } from '../../../../features/coaching/coaching-dashboard-state';
+import { routeForStep } from '../../../../features/onboarding/onboarding-routes';
 
 export default function DashboardPage() {
   const locale = useLocale();
+  const router = useRouter();
   const t = useTranslations('coaching');
   const common = useTranslations('common');
   const plan = useCoachingPlanQuery();
   const start = useStartGenerationMutation();
   const accept = useAcceptPlanMutation();
+  const updateAction = useUpdateActionStatusMutation();
   const startRequested = useRef(false);
 
   useEffect(() => {
@@ -27,6 +32,12 @@ export default function DashboardPage() {
       start.mutate();
     }
   }, [plan.error, start]);
+
+  useEffect(() => {
+    if (!(plan.error instanceof ApiError)) return;
+    if (plan.error.code === 'ONBOARDING_STEP_BLOCKED') router.replace(routeForStep(plan.error.nextStep));
+    if (plan.error.code === 'SAFETY_HOLD') router.replace('/safety/hold');
+  }, [plan.error, router]);
 
   const view = resolveDashboardView({ data: plan.data, error: plan.error instanceof ApiError ? plan.error : null, startPending: start.isPending });
   let content = <p className="text-slate-600">{common('loading')}</p>;
@@ -45,28 +56,40 @@ export default function DashboardPage() {
   } else if (view === 'noAssessment') {
     content = <StateCard title={t('noAssessmentTitle')} body={t('noAssessmentBody')} />;
   } else if (view === 'safetyHold') {
-    content = <StateCard title={t('safetyHoldTitle')} body={t('safetyHoldBody')} />;
+    content = <p className="text-slate-600">{t('safetyHoldBody')}</p>;
   } else if (view === 'ineligible') {
-    content = <StateCard title={t('ineligibleTitle')} body={t('ineligibleBody')} />;
+    content = <p className="text-slate-600">{t('ineligibleBody')}</p>;
+  } else if (view === 'notReady') {
+    content = <StateCard title={t('notReadyTitle')} body={t('notReadyBody')} action={common('retry')} onAction={() => plan.refetch()} />;
+  } else if (view === 'notActive') {
+    content = <StateCard title={t('notActiveTitle')} body={t('notActiveBody')} action={common('retry')} onAction={() => plan.refetch()} />;
   } else if (plan.data?.generationStatus === 'READY') {
     content = (
       <CoachingPlanView
         plan={plan.data}
         locale={locale}
         onAccept={() => accept.mutate()}
-        accepting={accept.isPending}
-        labels={{
-          goals: t('goals'),
-          actions: t('actions'),
-          acceptPlan: t('acceptPlan'),
-          accepting: t('accepting'),
+        onUpdateAction={(actionId, status, expectedVersion) => updateAction.mutate({ actionId, body: { status, expected_version: expectedVersion } })}
+          accepting={accept.isPending}
+          updatingActionId={updateAction.variables?.actionId}
+          labels={{
+            focusAreas: t('focusAreas'),
+            goals: t('goals'),
+            actions: t('actions'),
+            disclaimer: t('disclaimer'),
+            acceptPlan: t('acceptPlan'),
+            accepting: t('accepting'),
           proposed: t('proposed'),
           active: t('active'),
           completed: t('completed'),
           actionIncomplete: t('actionIncomplete'),
           actionComplete: t('actionComplete'),
-        }}
-      />
+          markComplete: t('markComplete'),
+            reopenAction: t('reopenAction'),
+            progress: t('progress'),
+            progressValue: t('progressValue', { completed: plan.data.progress.completed, total: plan.data.progress.total }),
+          }}
+        />
     );
   } else if (view === 'error') {
     content = <StateCard title={t('errorTitle')} body={t('errorBody')} action={common('retry')} onAction={() => plan.refetch()} />;

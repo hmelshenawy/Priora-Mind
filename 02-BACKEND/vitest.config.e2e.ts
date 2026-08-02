@@ -9,7 +9,12 @@ export default defineConfig({
   test: {
     root: './',
     environment: 'node',
-    include: ['tests/e2e/**/*.spec.ts', 'tests/e2e/**/*.e2e-spec.ts'],
+    include: [
+      'tests/e2e/**/*.spec.ts',
+      'tests/e2e/**/*.e2e-spec.ts',
+      'tests/integration/**/*.spec.ts',
+      'tests/integration/**/*.integration-spec.ts',
+    ],
     exclude: ['node_modules/**', 'dist/**'],
     globals: false,
     testTimeout: 30_000,

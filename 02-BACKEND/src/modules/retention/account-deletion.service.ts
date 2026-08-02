@@ -2,13 +2,22 @@ import { Injectable, Logger, Inject } from '@nestjs/common';
 import { PrismaService } from '../../prisma/prisma.service';
 import { toSafeLogContext } from '../../common/redact';
 import { AUTH_DELETION_PORT, type AuthDeletionPort } from '../auth/ports/auth-deletion.port';
-import { PROFILE_DELETION_PORT, type ProfileDeletionPort } from '../profile/ports/profile-deletion.port';
+import {
+  PROFILE_DELETION_PORT,
+  type ProfileDeletionPort,
+} from '../profile/ports/profile-deletion.port';
 import {
   ASSESSMENT_DELETION_PORT,
   type AssessmentDeletionPort,
 } from '../assessment/ports/assessment-deletion.port';
-import { COACHING_DELETION_PORT, type CoachingDeletionPort } from '../coaching/ports/coaching-deletion.port';
-import { SAFETY_DELETION_PORT, type SafetyDeletionPort } from '../safety/ports/safety-deletion.port';
+import {
+  COACHING_DELETION_PORT,
+  type CoachingDeletionPort,
+} from '../coaching/ports/coaching-deletion.port';
+import {
+  SAFETY_DELETION_PORT,
+  type SafetyDeletionPort,
+} from '../safety/ports/safety-deletion.port';
 
 /**
  * User-initiated account deletion (Consent policy §9, FR-031, research D10).
@@ -74,10 +83,18 @@ export class AccountDeletionService {
       assessment: await this.run('assessment', confirmationId, () =>
         this.assessment.deleteAssessmentForUsers([userId]),
       ),
-      coaching: await this.run('coaching', confirmationId, () => this.coaching.deleteCoachingForUsers([userId])),
-      safety: await this.run('safety', confirmationId, () => this.safety.deleteSafetyForUsers([userId])),
-      profile: await this.run('profile', confirmationId, () => this.profile.deleteProfileForUsers([userId])),
-      consent: await this.run('consent', confirmationId, () => this.auth.deleteConsentForUsers([userId])),
+      coaching: await this.run('coaching', confirmationId, () =>
+        this.coaching.deleteCoachingForUsers([userId]),
+      ),
+      safety: await this.run('safety', confirmationId, () =>
+        this.safety.deleteSafetyForUsers([userId]),
+      ),
+      profile: await this.run('profile', confirmationId, () =>
+        this.profile.deleteProfileForUsers([userId]),
+      ),
+      consent: await this.run('consent', confirmationId, () =>
+        this.auth.deleteConsentForUsers([userId]),
+      ),
       // `auth` (the account row) is deleted last only on full success below.
       auth: { deleted: 0, errors: 0 },
     };
@@ -86,9 +103,13 @@ export class AccountDeletionService {
     let status: 'completed' | 'partial';
     if (failed === 0) {
       // 3) All stores confirmed → hard-delete the account row (cascades tokens + any
-      //    leftover). The per-module counts are the source of truth; this just removes
+      //    leftover). Conversation rows are user-owned with FK cascade, so Spec 004
+      //    conversations/messages/sources are removed when the identity row is deleted.
+      //    The per-module counts are the source of truth; this just removes
       //    the identity row.
-      counts.auth = await this.run('auth', confirmationId, () => this.auth.deleteAccountForUsers([userId]));
+      counts.auth = await this.run('auth', confirmationId, () =>
+        this.auth.deleteAccountForUsers([userId]),
+      );
       status = counts.auth.errors === 0 ? 'completed' : 'partial';
     } else {
       // Partial failure → keep the account (deletedAt set, access disabled). Retry
@@ -156,8 +177,22 @@ export type AccountDeletionOutcome = {
 };
 
 function sumErrors(c: AccountCategoryCounts): number {
-  return c.auth.errors + c.profile.errors + c.assessment.errors + c.coaching.errors + c.safety.errors + c.consent.errors;
+  return (
+    c.auth.errors +
+    c.profile.errors +
+    c.assessment.errors +
+    c.coaching.errors +
+    c.safety.errors +
+    c.consent.errors
+  );
 }
 function totalCounts(c: AccountCategoryCounts): number {
-  return c.auth.deleted + c.profile.deleted + c.assessment.deleted + c.coaching.deleted + c.safety.deleted + c.consent.deleted;
+  return (
+    c.auth.deleted +
+    c.profile.deleted +
+    c.assessment.deleted +
+    c.coaching.deleted +
+    c.safety.deleted +
+    c.consent.deleted
+  );
 }

@@ -65,11 +65,12 @@ export default function DashboardPage() {
     content = <StateCard title={t('notActiveTitle')} body={t('notActiveBody')} action={common('retry')} onAction={() => plan.refetch()} />;
   } else if (plan.data?.generationStatus === 'READY') {
     content = (
-      <CoachingPlanView
-        plan={plan.data}
-        locale={locale}
-        onAccept={() => accept.mutate()}
-        onUpdateAction={(actionId, status, expectedVersion) => updateAction.mutate({ actionId, body: { status, expected_version: expectedVersion } })}
+        <CoachingPlanView
+          plan={plan.data}
+          locale={locale}
+          onAccept={() => accept.mutate()}
+          onOpenChat={() => router.push('/chat')}
+          onUpdateAction={(actionId, status, expectedVersion) => updateAction.mutate({ actionId, body: { status, expected_version: expectedVersion } })}
           accepting={accept.isPending}
           updatingActionId={updateAction.variables?.actionId}
           labels={{
@@ -88,6 +89,8 @@ export default function DashboardPage() {
             reopenAction: t('reopenAction'),
             progress: t('progress'),
             progressValue: t('progressValue', { completed: plan.data.progress.completed, total: plan.data.progress.total }),
+            openChat: t('openChat'),
+            continueChat: t('continueChat'),
           }}
         />
     );

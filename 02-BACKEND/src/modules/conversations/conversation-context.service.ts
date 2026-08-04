@@ -7,11 +7,16 @@ import { ConversationMessageRepository } from './conversation-message.repository
 export class ConversationContextService {
   constructor(private readonly messages: ConversationMessageRepository) {}
 
-  async loadRecentHistory(userId: string, conversationId: string): Promise<ConversationHistoryItem[]> {
+  async loadRecentHistory(
+    userId: string,
+    conversationId: string,
+    excludeMessageId?: string,
+  ): Promise<ConversationHistoryItem[]> {
     const rows = await this.messages.findRecentCompletedMessages(
       userId,
       conversationId,
       CONVERSATION_LIMITS.recentHistoryMessages,
+      excludeMessageId,
     );
     return this.trimToBudget(rows.map((row) => ({ role: row.role, content: row.content })));
   }
@@ -19,7 +24,7 @@ export class ConversationContextService {
   trimToBudget(items: ConversationHistoryItem[]): ConversationHistoryItem[] {
     const kept: ConversationHistoryItem[] = [];
     let remaining = CONVERSATION_LIMITS.recentHistoryMaxChars;
-    for (const item of [...items].reverse()) {
+    for (const item of items) {
       const content = item.content.trim();
       if (!content) continue;
       if (content.length > remaining) break;

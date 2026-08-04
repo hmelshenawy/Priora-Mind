@@ -188,9 +188,20 @@ export class ConversationMessageRepository {
     );
   }
 
-  findRecentCompletedMessages(userId: string, conversationId: string, limit: number) {
+  findRecentCompletedMessages(
+    userId: string,
+    conversationId: string,
+    limit: number,
+    excludeMessageId?: string,
+  ) {
     return this.db.conversationMessage.findMany({
-      where: { userId, conversationId, status: 'COMPLETED', role: { in: ['user', 'assistant'] } },
+      where: {
+        userId,
+        conversationId,
+        status: 'COMPLETED',
+        role: { in: ['user', 'assistant'] },
+        ...(excludeMessageId ? { id: { not: excludeMessageId } } : {}),
+      },
       orderBy: [{ createdAt: 'desc' }, { id: 'desc' }],
       take: limit,
       select: { role: true, content: true, createdAt: true, id: true },

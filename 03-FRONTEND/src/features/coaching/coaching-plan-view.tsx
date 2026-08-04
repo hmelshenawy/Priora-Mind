@@ -12,6 +12,7 @@ export function CoachingPlanView({
   plan,
   locale,
   onAccept,
+  onOpenChat,
   onUpdateAction,
   accepting,
   updatingActionId,
@@ -20,6 +21,7 @@ export function CoachingPlanView({
   plan: CoachingPlanResponse;
   locale: string;
   onAccept: () => void;
+  onOpenChat: () => void;
   onUpdateAction: (actionId: string, status: ActionStatus, expectedVersion?: number) => void;
   accepting: boolean;
   updatingActionId?: string;
@@ -39,6 +41,8 @@ export function CoachingPlanView({
     reopenAction: string;
     progress: string;
     progressValue: string;
+    openChat: string;
+    continueChat: string;
   };
 }) {
   const statusLabel = plan.planStatus === 'PROPOSED' ? labels.proposed : plan.planStatus === 'ACTIVE' ? labels.active : labels.completed;
@@ -49,6 +53,7 @@ export function CoachingPlanView({
         <p className="text-sm font-medium uppercase tracking-wide text-slate-500">{statusLabel}</p>
         <h1 id="coaching-plan-title" className="text-3xl font-semibold text-slate-950">{text(plan.title, locale)}</h1>
         <p className="text-slate-700">{text(plan.summary, locale)}</p>
+        <div className="flex flex-wrap gap-3">
         {plan.planStatus === 'PROPOSED' ? (
           <button
             type="button"
@@ -59,6 +64,14 @@ export function CoachingPlanView({
             {accepting ? labels.accepting : labels.acceptPlan}
           </button>
         ) : null}
+          <button
+            type="button"
+            onClick={onOpenChat}
+            className="rounded-full border border-slate-300 px-5 py-2 text-sm font-semibold text-slate-900 outline-none ring-offset-2 focus-visible:ring-2 focus-visible:ring-slate-950"
+          >
+            {plan.planStatus === 'PROPOSED' ? labels.openChat : labels.continueChat}
+          </button>
+        </div>
       </header>
       <section className="rounded-2xl bg-slate-50 p-4" aria-label={labels.progress} aria-live="polite">
         <div className="flex items-center justify-between gap-3 text-sm font-medium text-slate-700">

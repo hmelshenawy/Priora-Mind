@@ -6,7 +6,7 @@ export const CONVERSATION_LIMITS = {
   recentHistoryMessages: 10,
   recentHistoryMaxChars: 6000,
   ragLimit: 6,
-  ragScoreThreshold: 0.7,
+  ragScoreThreshold: Number(process.env.RAG_SCORE_THRESHOLD ?? '0.44'),
   ragMaxContextChars: 8000,
 } as const;
 

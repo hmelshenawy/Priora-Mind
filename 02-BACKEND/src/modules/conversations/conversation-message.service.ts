@@ -1,4 +1,4 @@
-import { BadRequestException, Inject, Injectable, Optional } from '@nestjs/common';
+import { BadRequestException, Inject, Injectable, Logger, Optional } from '@nestjs/common';
 import type { ConversationAiPort } from '../ai/conversation-ai.port';
 import { CONVERSATION_AI_PORT } from '../ai/conversation-ai.port';
 import type { SendConversationMessageInput } from './conversation.dto';
@@ -28,6 +28,7 @@ import { normalizeFailureCode, safeFailureDetail } from './conversation-failure-
 
 @Injectable()
 export class ConversationMessageService {
+  private readonly logger = new Logger(ConversationMessageService.name);
   private readonly followUpDetector: ConversationFollowUpDetector;
   private readonly context: ConversationContextService;
   private readonly followUpRewrite: ConversationFollowUpRewriteService;
@@ -163,7 +164,11 @@ export class ConversationMessageService {
     }
 
     const correlationId = `conversation-${conversationId}-${userMessage.id}`;
-    const recentHistory = await this.context.loadRecentHistory(userId, conversationId);
+    const recentHistory = await this.context.loadRecentHistory(
+      userId,
+      conversationId,
+      userMessage.id,
+    );
     let standaloneRetrievalQuery = input.content.trim();
     const isFollowUp = this.followUpDetector.isFollowUp(input.content);
     if (isFollowUp) {
@@ -429,6 +434,14 @@ export class ConversationMessageService {
     processingStage: string,
     failureCode: string,
   ) {
+    const safeCode = normalizeFailureCode(failureCode, 'ORCHESTRATION_FAILED');
+    this.logger.warn({
+      event: 'conversation_assistant_failed',
+      conversationId,
+      userMessageId,
+      processingStage,
+      failureCode: safeCode,
+    });
     return this.messages.createAssistantFailure(
       userId,
       conversationId,
@@ -436,7 +449,7 @@ export class ConversationMessageService {
       CONVERSATION_FALLBACKS.nonSafetyTechnical,
       'RAG',
       processingStage,
-      normalizeFailureCode(failureCode, 'ORCHESTRATION_FAILED'),
+      safeCode,
       safeFailureDetail(processingStage),
       new Date(),
     );

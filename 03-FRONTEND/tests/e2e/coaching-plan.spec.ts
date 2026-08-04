@@ -17,6 +17,7 @@ const plan = {
 
 async function stubAuth(page: Page) {
   await page.route('**/api/v1/auth/login', (route) => route.fulfill({ json: { accessToken: 'token', profile: { onboarding_state: 'COMPLETED', language_code: 'en' } } }));
+  await page.route('**/api/v1/auth/refresh', (route) => route.fulfill({ json: { accessToken: 'token' } }));
   await page.route('**/api/v1/onboarding/completion', (route) => route.fulfill({ json: { completed: true, onboarding_state: 'COMPLETED', post_onboarding_route: '/dashboard' } }));
   await page.route('**/api/v1/onboarding/state', (route) => route.fulfill({ json: { onboarding_state: 'COMPLETED', current_step: null, assessment_state: 'SCORED', language_code: 'en', requires_reconsent: false, next_route: '/dashboard' } }));
 }
@@ -94,4 +95,87 @@ test.describe('coaching dashboard plan experience', () => {
       await expect(page.getByText(item.text)).toBeVisible({ timeout: 15_000 });
     });
   }
+
+  test('stops pending-plan polling after a persistent 503', async ({ page }) => {
+    await stubAuth(page);
+    const startedAt = Date.now();
+    const getTimestamps: number[] = [];
+    await page.route('**/api/v1/coaching/plan', async (route) => {
+      if (route.request().method() !== 'GET') {
+        await route.fulfill({ status: 202, json: { plan_id: 'plan-1', generationStatus: 'PENDING' } });
+        return;
+      }
+
+      getTimestamps.push(Date.now() - startedAt);
+      if (getTimestamps.length === 1) {
+        await route.fulfill({ status: 200, json: { plan_id: 'plan-1', generationStatus: 'PENDING' } });
+        return;
+      }
+
+      await route.fulfill({ status: 503, json: { error: { code: 'PLAN_UNAVAILABLE', retryable: true } } });
+    });
+
+    await loginToDashboard(page);
+    await expect.poll(() => getTimestamps.length, { timeout: 10_000 }).toBe(2);
+    await page.waitForTimeout(5_000);
+    expect(getTimestamps).toHaveLength(2);
+    console.log(`PLAN_UNAVAILABLE GET offsets ms: ${getTimestamps.join(', ')}`);
+  });
+
+  test('bounds retries for a transient failure and stops after a ready response', async ({ page }) => {
+    await stubAuth(page);
+    let getCount = 0;
+    await page.route('**/api/v1/coaching/plan', async (route) => {
+      if (route.request().method() !== 'GET') {
+        await route.fulfill({ status: 202, json: { plan_id: 'plan-1', generationStatus: 'PENDING' } });
+        return;
+      }
+      getCount += 1;
+      if (getCount < 3) {
+        await route.fulfill({ status: 502, json: { error: { code: 'UPSTREAM_UNAVAILABLE' } } });
+        return;
+      }
+      await route.fulfill({ json: plan });
+    });
+
+    await loginToDashboard(page);
+    await expect(page.getByRole('heading', { name: 'Your coaching plan' })).toBeVisible({ timeout: 15_000 });
+    expect(getCount).toBe(3);
+    await page.waitForTimeout(2_000);
+    expect(getCount).toBe(3);
+  });
+
+  test('allows an explicit user retry to restart a failed generation', async ({ page }) => {
+    await stubAuth(page);
+    const startedAt = Date.now();
+    const getTimestamps: number[] = [];
+    const postTimestamps: number[] = [];
+    let postCount = 0;
+    await page.route('**/api/v1/coaching/plan', async (route) => {
+      if (route.request().method() === 'POST') {
+        postCount += 1;
+        postTimestamps.push(Date.now() - startedAt);
+        await route.fulfill({ status: 202, json: { plan_id: 'plan-1', generationStatus: 'PENDING' } });
+        return;
+      }
+      getTimestamps.push(Date.now() - startedAt);
+      if (postCount === 0) {
+        await route.fulfill({ status: 503, json: { error: { code: 'PLAN_UNAVAILABLE', retryable: true } } });
+        return;
+      }
+      await route.fulfill({ json: plan });
+    });
+
+    await loginToDashboard(page);
+    await expect(page.getByText('Coaching plan generation failed')).toBeVisible({ timeout: 15_000 });
+    expect(getTimestamps).toHaveLength(1);
+    await page.getByRole('button', { name: 'Retry' }).click();
+    await expect(page.getByRole('heading', { name: 'Your coaching plan' })).toBeVisible({ timeout: 15_000 });
+    expect(postCount).toBe(1);
+    expect(getTimestamps).toHaveLength(2);
+    expect(getTimestamps[1]).toBeGreaterThanOrEqual(postTimestamps[0]);
+    await page.waitForTimeout(5_000);
+    expect(getTimestamps).toHaveLength(2);
+    console.log(`explicit retry POST/GET offsets ms: ${postTimestamps[0]} / ${getTimestamps[1]}`);
+  });
 });

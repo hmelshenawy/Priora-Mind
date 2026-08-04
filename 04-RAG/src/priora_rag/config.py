@@ -21,7 +21,7 @@ CHUNK_SIZE = int(os.getenv("RAG_CHUNK_SIZE", "1000"))
 CHUNK_OVERLAP = int(os.getenv("RAG_CHUNK_OVERLAP", "240"))
 
 RETRIEVAL_LIMIT = int(os.getenv("RAG_TOP_K", "3"))
-SCORE_THRESHOLD = float(os.getenv("RAG_SCORE_THRESHOLD", "0.4"))
+SCORE_THRESHOLD = float(os.getenv("RAG_SCORE_THRESHOLD", "0.44"))
 
 MAX_SOURCE_BYTES = int(os.getenv("RAG_MAX_SOURCE_BYTES", str(10 * 1024 * 1024)))
 

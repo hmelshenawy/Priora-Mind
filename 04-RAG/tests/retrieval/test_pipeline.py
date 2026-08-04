@@ -20,7 +20,7 @@ def test_retrieval_pipeline_embeds_searches_and_maps(monkeypatch) -> None:  # ty
     monkeypatch.setattr(pipeline, "create_qdrant_client", lambda *args: "client")
 
     def search(client, collection, vector, limit, threshold):  # type: ignore[no-untyped-def]
-        assert (client, collection, vector, limit, threshold) == ("client", "test", [1.0], 30, 0.4)
+        assert (client, collection, vector, limit, threshold) == ("client", "test", [1.0], 30, 0.44)
         return [point]
 
     monkeypatch.setattr(pipeline, "search_points", search)

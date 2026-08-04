@@ -109,6 +109,11 @@ async function refreshAccessToken(): Promise<boolean> {
   }
 }
 
+export async function ensureAccessToken(): Promise<boolean> {
+  if (getAccessToken() !== null) return true;
+  return refreshAccessToken();
+}
+
 /**
  * Typed fetch wrapper. Throws ApiError on non-2xx. On 401 it transparently refreshes
  * once and retries (unless _retry is already set, in which case it clears the token

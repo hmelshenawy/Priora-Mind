@@ -94,7 +94,7 @@ describe('conversation RAG answer e2e', () => {
     expect(result.assistantMessage.sources).toEqual([
       expect.objectContaining({ chunkId: 'chunk-rag-1', sourceId: 'source-rag-1', textHash: 'hash-rag-1' }),
     ]);
-    expect(rag.searchCalls[0].request).toMatchObject({ question: 'What is grounding?', limit: 6, score_threshold: 0.7 });
+    expect(rag.searchCalls[0].request).toMatchObject({ question: 'What is grounding?', limit: 6, score_threshold: 0.44 });
     expect(ai.groundedAnswerCalls).toBe(1);
   });
 });

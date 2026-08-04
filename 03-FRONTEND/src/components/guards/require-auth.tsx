@@ -1,9 +1,9 @@
 'use client';
 
-import { useEffect, type ReactNode } from 'react';
+import { useEffect, useState, type ReactNode } from 'react';
 import { useLocale } from 'next-intl';
 import { useRouter } from '../../i18n/navigation';
-import { getAccessToken } from '../../lib/auth-token';
+import { ensureAccessToken } from '../../lib/api-client';
 
 /**
  * UX-only auth guard (FR-027 / FR-028, SAD.md).
@@ -25,15 +25,22 @@ import { getAccessToken } from '../../lib/auth-token';
 export function RequireAuth({ children }: { children: ReactNode }) {
   const locale = useLocale();
   const router = useRouter();
+  const [checking, setChecking] = useState(true);
 
   useEffect(() => {
-    if (getAccessToken() === null) {
-      router.replace(`/${locale}/login`);
-    }
+    let active = true;
+    ensureAccessToken().then((authenticated) => {
+      if (!active) return;
+      if (!authenticated) router.replace('/login');
+      setChecking(false);
+    });
+    return () => {
+      active = false;
+    };
   }, [locale, router]);
 
   // Render children optimistically; the effect handles the redirect. The
   // protected API layer is the real gate, so flashing content briefly is safe
   // (no protected data loads until the API responds).
-  return <>{children}</>;
+  return checking ? null : <>{children}</>;
 }

@@ -65,4 +65,29 @@ describe('conversation citation mapper', () => {
     expect(sources[0]).toMatchObject({ sourceTitle: 'Grounding Guide', sourceFile: 'guide.pdf' });
     expect(sources[0].citationPage).toBeNull();
   });
+
+  it('preserves model citation order as one-based display indexes', () => {
+    const second = {
+      ...chunk,
+      chunk_id: 'chunk-2',
+      source_id: 'source-2',
+      text_hash: 'hash-2',
+      chunk_index: 4,
+    };
+    const sources = new ConversationCitationMapper().map(
+      {
+        content: 'Grounded answer with ordered citations.',
+        citations: [
+          { chunk_id: 'chunk-2', source_id: 'source-2', text_hash: 'hash-2' },
+          { chunk_id: 'chunk-1', source_id: 'source-1', text_hash: 'hash-1' },
+        ],
+        modelId: 'fake',
+      },
+      [chunk, second],
+    );
+    expect(sources.map(({ chunkId, chunkIndex, displayOrder }) => ({ chunkId, chunkIndex, displayOrder }))).toEqual([
+      { chunkId: 'chunk-2', chunkIndex: 4, displayOrder: 1 },
+      { chunkId: 'chunk-1', chunkIndex: 3, displayOrder: 2 },
+    ]);
+  });
 });

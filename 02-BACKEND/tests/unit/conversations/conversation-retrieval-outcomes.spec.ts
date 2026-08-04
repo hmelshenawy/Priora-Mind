@@ -14,16 +14,33 @@ const validChunk = {
 };
 
 describe('conversation retrieval outcomes', () => {
-  it('treats empty and low-score retrieval as insufficient without usable chunks', () => {
+  it('accepts calibrated CBT and anxiety results', () => {
     const grounding = new ConversationGroundingService();
-    expect(grounding.selectSufficientChunks({ status: 'ok', correlationId: 'corr', chunks: [] })).toEqual([]);
+    const chunks = grounding.selectSufficientChunks({
+      status: 'ok',
+      correlationId: 'corr',
+      chunks: [
+        { ...validChunk, chunk_id: 'cbt', score: 0.46743292 },
+        { ...validChunk, chunk_id: 'anxiety', score: 0.63354 },
+      ],
+    });
+    expect(chunks.map((chunk) => chunk.chunk_id)).toEqual(['cbt', 'anxiety']);
+  });
+
+  it('rejects calibrated unrelated results', () => {
+    const grounding = new ConversationGroundingService();
     expect(
       grounding.selectSufficientChunks({
         status: 'ok',
         correlationId: 'corr',
-        chunks: [{ ...validChunk, score: 0.2 }],
+        chunks: [{ ...validChunk, chunk_id: 'flat-tire', score: 0.419188 }],
       }),
     ).toEqual([]);
+  });
+
+  it('treats empty retrieval as insufficient without usable chunks', () => {
+    const grounding = new ConversationGroundingService();
+    expect(grounding.selectSufficientChunks({ status: 'ok', correlationId: 'corr', chunks: [] })).toEqual([]);
   });
 
   it('filters duplicate and invalid chunks before LLM use', () => {

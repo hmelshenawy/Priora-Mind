@@ -1,16 +1,29 @@
-import { describe, expect, it } from 'vitest';
+import { describe, expect, it, vi } from 'vitest';
 import { ConversationContextService } from '../../../src/modules/conversations/conversation-context.service';
 
 describe('conversation context window', () => {
-  it('keeps bounded recent history without summaries or long-term memory', () => {
+  it('converts newest-first repository rows into chronological history', () => {
     const service = new ConversationContextService({} as never);
     const history = service.trimToBudget(
-      Array.from({ length: 12 }, (_, index) => ({
-        role: index % 2 === 0 ? ('user' as const) : ('assistant' as const),
-        content: `message-${index}`,
-      })),
+      [
+        { role: 'assistant', content: 'newest' },
+        { role: 'user', content: 'middle' },
+        { role: 'assistant', content: 'oldest' },
+      ],
     );
-    expect(history).toHaveLength(12);
+    expect(history.map((item) => item.content)).toEqual(['oldest', 'middle', 'newest']);
     expect(history.some((item) => item.content.includes('summary'))).toBe(false);
+  });
+
+  it('excludes the separately supplied current user message', async () => {
+    const messages = { findRecentCompletedMessages: vi.fn().mockResolvedValue([]) };
+    const service = new ConversationContextService(messages as never);
+    await service.loadRecentHistory('user-1', 'conversation-1', 'current-message');
+    expect(messages.findRecentCompletedMessages).toHaveBeenCalledWith(
+      'user-1',
+      'conversation-1',
+      10,
+      'current-message',
+    );
   });
 });

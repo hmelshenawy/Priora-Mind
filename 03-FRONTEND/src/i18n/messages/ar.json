@@ -11,7 +11,11 @@
   "nav": {
     "register": "إنشاء حساب",
     "login": "تسجيل الدخول",
-    "dashboard": "لوحة التحكم"
+    "dashboard": "لوحة التحكم",
+    "primary": "التنقل الرئيسي",
+    "home": "الرئيسية",
+    "plan": "الخطة",
+    "chat": "المحادثة"
   },
   "public": {
     "registerTitle": "أنشئ حسابك في بريورا مايند",
@@ -84,6 +88,33 @@
   "protected": {
     "dashboardPlaceholder": "اكتملت التهيئة — خطة التوجيه ستأتي في إصدار لاحق."
   },
+  "home": {
+    "welcome": "صفحتك الرئيسية للتوجيه",
+    "subtitle": "خطتك، خطوتك التالية، ومحادثاتك في مكان واحد.",
+    "guidance": {
+      "acceptPlan": "التالي: اقبل خطتك",
+      "continuePlan": "التالي: تابع خطتك",
+      "reviewCompletedPlan": "التالي: راجع خطتك المكتملة"
+    },
+    "firstRunTitle": "مرحبًا — لنبدأ",
+    "firstRunBody": "أنشئ خطة التوجيه الأولى من تقييمك المكتمل، وابدأ أول محادثة عندما تكون جاهزًا.",
+    "firstRunAction": "أنشئ خطة التوجيه الأولى",
+    "chatTitle": "المحادثات",
+    "continueChatTitle": "تابع آخر محادثة",
+    "continueChatAction": "افتح آخر محادثة",
+    "startNewTitle": "ابدأ محادثة جديدة",
+    "startNewBody": "ابدأ محادثة توجيه جديدة متى كنت جاهزًا.",
+    "startFirstTitle": "ابدأ أول محادثة",
+    "startFirstBody": "لم تبدأ أي محادثة بعد. ابدأ واحدة متى كنت جاهزًا.",
+    "startNewAction": "ابدأ محادثة",
+    "startNewSubmitting": "جارٍ البدء…",
+    "recentTitle": "المحادثات الأخيرة",
+    "openConversations": "فتح كل المحادثات",
+    "chatErrorTitle": "تعذّر تحميل المحادثات",
+    "chatErrorBody": "يرجى المحاولة مرة أخرى.",
+    "chatErrorRetry": "حاول مرة أخرى",
+    "conversationFallback": "محادثة"
+  },
   "coaching": {
     "starting": "جارٍ بدء خطة التوجيه…",
     "pending": "جارٍ تجهيز خطة التوجيه…",
@@ -93,6 +124,7 @@
     "start": "بدء الخطة",
     "failedTitle": "تعذّر إنشاء خطة التوجيه",
     "failedBody": "يمكنك إعادة محاولة إنشاء الخطة الحالية نفسها.",
+    "retry": "حاول مرة أخرى",
     "unavailableTitle": "خطة التوجيه غير متاحة",
     "unavailableBody": "محتوى التوجيه المعتمد غير متاح بعد، لذلك تم تعطيل إنشاء الخطط حاليًا.",
     "noAssessmentTitle": "التقييم مطلوب",

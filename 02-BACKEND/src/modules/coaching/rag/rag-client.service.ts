@@ -55,20 +55,26 @@ export class RagApiClientService implements RagClientPort {
     const controller = new AbortController();
     const timer = setTimeout(() => controller.abort(), this.timeoutMs);
     try {
-      const response = await fetch(`${this.baseUrl.replace(/\/$/, '')}/v1/retrieval/query`, {
+      const response = await fetch(`${this.baseUrl.replace(/\/$/, '')}/v1/search`, {
         method: 'POST',
         headers: {
           Authorization: `Bearer ${this.serviceToken}`,
           'Content-Type': 'application/json',
           'X-Correlation-Id': correlationId,
         },
-        body: JSON.stringify(request),
+        body: JSON.stringify({
+          question: `Coaching guidance for ${request.focus_areas.join(', ')}. Support area: ${request.support_domain ?? 'none'}.`,
+          limit: request.top_k,
+          score_threshold: request.score_threshold,
+        }),
         signal: controller.signal,
       });
       if (!response.ok) return this.unavailable(correlationId);
-      const body = (await response.json()) as RagRetrievalResult;
-      if (body.status !== 'ok') return { ...body, chunks: [] };
-      return { ...body, chunks: Array.isArray(body.chunks) ? body.chunks : [] };
+      const body = (await response.json()) as { results?: RagRetrievalChunk[] };
+      if (!Array.isArray(body.results) || body.results.length === 0) {
+        return { status: 'insufficient_grounding', correlation_id: correlationId, chunks: [], error_code: 'INSUFFICIENT_GROUNDING' };
+      }
+      return { status: 'ok', correlation_id: correlationId, chunks: body.results };
     } catch {
       return this.unavailable(correlationId);
     } finally {

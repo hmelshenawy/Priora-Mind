@@ -6,6 +6,7 @@ type JsonSchema = {
   items?: unknown;
   minLength?: unknown;
   minItems?: unknown;
+  minimum?: unknown;
 };
 
 export function matchesConversationSchema(value: unknown, rawSchema: unknown): boolean {
@@ -19,6 +20,15 @@ export function matchesConversationSchema(value: unknown, rawSchema: unknown): b
       (typeof schema.minLength !== 'number' || value.length >= schema.minLength)
     );
   }
+  if (schema.type === 'number') {
+    return typeof value === 'number' && Number.isFinite(value)
+      && (typeof schema.minimum !== 'number' || value >= schema.minimum);
+  }
+  if (schema.type === 'integer') {
+    return Number.isInteger(value)
+      && (typeof schema.minimum !== 'number' || (value as number) >= schema.minimum);
+  }
+  if (schema.type === 'null') return value === null;
   return false;
 }
 

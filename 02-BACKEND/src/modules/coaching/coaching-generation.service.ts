@@ -8,6 +8,7 @@ import { validateLlmPlanOutput } from './coaching-plan-validator';
 import type { ScoredResultDto } from '../assessment/assessment.dto';
 import { COACHING_LLM_PORT, type CoachingLlmPort } from './ports/coaching-llm.port';
 import type { GroundingBundle, LlmPlanOutput } from './ports/coaching-llm.port';
+import { normalizeConversationLlmError } from '../ai/conversation-llm.errors';
 
 type Db = Record<string, { [method: string]: (...args: unknown[]) => unknown }> & {
   $transaction: <T>(fn: (tx: Db) => Promise<T>) => Promise<T>;
@@ -22,7 +23,7 @@ interface PersistedGraph {
 @Injectable()
 export class CoachingGenerationService {
   private readonly inFlight = new Map<string, AbortController>();
-  private readonly leaseMs = 20_000;
+  private readonly leaseMs = Number(process.env.COACHING_LLM_TIMEOUT_MS ?? 20_000) + 5_000;
 
   constructor(
     private readonly prisma: PrismaService,
@@ -90,7 +91,7 @@ export class CoachingGenerationService {
 
   private async run(planId: string, attemptId: string, result: ScoredResultDto): Promise<void> {
     try {
-      if (!this.testFixturesEnabled() && (!approvedLibraryContentAvailable() || !approvedDisclaimerContentAvailable())) {
+      if (!approvedLibraryContentAvailable() || !approvedDisclaimerContentAvailable()) {
         await this.failAttempt(planId, attemptId, 'PLAN_UNAVAILABLE', ['CONTENT_GATE_UNRESOLVED']);
         return;
       }
@@ -143,12 +144,9 @@ export class CoachingGenerationService {
         });
       });
     } catch (error) {
-      await this.failAttempt(planId, attemptId, error instanceof PlanUnavailableException ? 'PLAN_UNAVAILABLE' : 'PROVIDER_ERROR', ['PROVIDER_ERROR']);
+      const code = error instanceof PlanUnavailableException ? 'PLAN_UNAVAILABLE' : normalizeConversationLlmError(error);
+      await this.failAttempt(planId, attemptId, code, [code]);
     }
-  }
-
-  private testFixturesEnabled(): boolean {
-    return process.env.NODE_ENV === 'test' || process.env.VITEST === 'true';
   }
 
   private mapGraph(bundle: GroundingBundle, output: LlmPlanOutput): PersistedGraph {

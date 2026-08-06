@@ -88,9 +88,15 @@ function makeService(llm: { generatePlan: (bundle: GroundingBundle) => Promise<L
 }
 
 describe('CoachingGenerationService', () => {
-  it('keeps production fail-closed while T001 approved content is unavailable', () => {
+  it('keeps production fail-closed while development fixtures satisfy the local content gate', () => {
+    const original = process.env.NODE_ENV;
+    process.env.NODE_ENV = 'production';
     expect(approvedLibraryContentAvailable()).toBe(false);
     expect(approvedDisclaimerContentAvailable()).toBe(false);
+    process.env.NODE_ENV = 'test';
+    expect(approvedLibraryContentAvailable()).toBe(true);
+    expect(approvedDisclaimerContentAvailable()).toBe(true);
+    process.env.NODE_ENV = original;
   });
 
   it('persists the complete validated graph atomically with correct relations and ordering', async () => {
@@ -129,8 +135,8 @@ describe('CoachingGenerationService', () => {
     await service.start(plan, result);
     await service.waitForIdle(plan.id);
     expect(llm.calls).toBe(1);
-    expect(approvedLibraryContentAvailable()).toBe(false);
-    expect(approvedDisclaimerContentAvailable()).toBe(false);
+    expect(approvedLibraryContentAvailable()).toBe(true);
+    expect(approvedDisclaimerContentAvailable()).toBe(true);
     expect(db.coachingPlanStore.get(plan.id)).toMatchObject({ generationStatus: 'READY', planStatus: 'PROPOSED' });
     expect(db.focusArea.findMany({ where: { planId: plan.id } })).toHaveLength(1);
     expect(db.goal.findMany({ where: { planId: plan.id } })).toHaveLength(1);

@@ -1,5 +1,5 @@
-import type { PrismaClient } from '@prisma/client';
-import { COACHING_LIBRARY_V1 } from '../../src/modules/coaching/coaching-library';
+import type { Prisma, PrismaClient } from '@prisma/client';
+import { COACHING_LIBRARY_V1, coachingLibraryIntegrity, type CoachingLibraryContent } from '../../src/modules/coaching/coaching-library';
 
 export async function seedCoachingLibrary(prisma: PrismaClient): Promise<void> {
   const existing = await prisma.coachingActionLibrary.findUnique({
@@ -10,16 +10,18 @@ export async function seedCoachingLibrary(prisma: PrismaClient): Promise<void> {
     await prisma.coachingActionLibrary.create({
       data: {
         version: COACHING_LIBRARY_V1.version,
-        content: COACHING_LIBRARY_V1.content,
+        content: COACHING_LIBRARY_V1.content as unknown as Prisma.InputJsonValue,
         integrity: COACHING_LIBRARY_V1.integrity,
       },
     });
     return;
   }
 
-  const storedContent = JSON.stringify(existing.content);
-  const expectedContent = JSON.stringify(COACHING_LIBRARY_V1.content);
-  if (storedContent !== expectedContent || existing.integrity !== COACHING_LIBRARY_V1.integrity) {
+  const storedIntegrity = coachingLibraryIntegrity(
+    COACHING_LIBRARY_V1.version,
+    existing.content as unknown as CoachingLibraryContent,
+  );
+  if (storedIntegrity !== COACHING_LIBRARY_V1.integrity || existing.integrity !== COACHING_LIBRARY_V1.integrity) {
     throw new Error(`CoachingActionLibrary ${COACHING_LIBRARY_V1.version} integrity mismatch`);
   }
 }

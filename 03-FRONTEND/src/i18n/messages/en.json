@@ -11,7 +11,11 @@
   "nav": {
     "register": "Create account",
     "login": "Sign in",
-    "dashboard": "Dashboard"
+    "dashboard": "Dashboard",
+    "primary": "Primary",
+    "home": "Home",
+    "plan": "Plan",
+    "chat": "Chat"
   },
   "public": {
     "registerTitle": "Create your Priora Mind account",
@@ -84,6 +88,33 @@
   "protected": {
     "dashboardPlaceholder": "Onboarding complete — coaching plan comes in a future release."
   },
+  "home": {
+    "welcome": "Your coaching home",
+    "subtitle": "Your plan, your next step, and your conversations in one place.",
+    "guidance": {
+      "acceptPlan": "Next: accept your plan",
+      "continuePlan": "Next: continue your plan",
+      "reviewCompletedPlan": "Next: review your completed plan"
+    },
+    "firstRunTitle": "Welcome — let's begin",
+    "firstRunBody": "Generate your first coaching plan from your completed assessment, and start your first conversation when you're ready.",
+    "firstRunAction": "Generate your first coaching plan",
+    "chatTitle": "Conversations",
+    "continueChatTitle": "Continue your last conversation",
+    "continueChatAction": "Open last conversation",
+    "startNewTitle": "Start a new conversation",
+    "startNewBody": "Begin a new coaching conversation whenever you're ready.",
+    "startFirstTitle": "Start your first conversation",
+    "startFirstBody": "You haven't started a conversation yet. Begin one whenever you're ready.",
+    "startNewAction": "Start conversation",
+    "startNewSubmitting": "Starting…",
+    "recentTitle": "Recent conversations",
+    "openConversations": "Open all conversations",
+    "chatErrorTitle": "Couldn't load conversations",
+    "chatErrorBody": "Please try again.",
+    "chatErrorRetry": "Try again",
+    "conversationFallback": "Conversation"
+  },
   "coaching": {
     "starting": "Starting your coaching plan…",
     "pending": "Preparing your coaching plan…",
@@ -93,6 +124,7 @@
     "start": "Start plan",
     "failedTitle": "Coaching plan generation failed",
     "failedBody": "You can retry generation for the same current plan.",
+    "retry": "Try again",
     "unavailableTitle": "Coaching plan unavailable",
     "unavailableBody": "Approved coaching content is not available yet, so plan generation is currently disabled.",
     "noAssessmentTitle": "Assessment required",

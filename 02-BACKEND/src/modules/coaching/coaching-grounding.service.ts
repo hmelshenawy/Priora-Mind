@@ -97,7 +97,7 @@ export class CoachingGroundingService {
       language: 'mixed',
       safety_exclusions: ['crisis', 'high_risk', 'medical', 'medication'],
       top_k: 6,
-      score_threshold: 0.7,
+      score_threshold: Number(process.env.RAG_SCORE_THRESHOLD ?? '0.44'),
       max_context_chars: 4000,
     }, correlationId);
     if (ragResult.status !== 'ok' || ragResult.chunks.length === 0) {

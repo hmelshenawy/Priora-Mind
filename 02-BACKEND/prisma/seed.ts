@@ -5,6 +5,9 @@ import { seedCoachingLibrary } from './seed/coaching-library';
 const prisma = new PrismaClient();
 
 async function main(): Promise<void> {
+  if (process.env.NODE_ENV === 'production') {
+    throw new Error('Development coaching fixtures must not be seeded in production');
+  }
   await seedCoachingLibrary(prisma);
   await seedCoachingDisclaimer(prisma);
 }

@@ -10,7 +10,11 @@ export function coachingDisclaimerIntegrity(version: string, copy: BilingualText
   return createHash('sha256').update(canonicalDisclaimer(version, copy)).digest('hex');
 }
 
-const copy: BilingualText = { en: '', ar: '' };
+/** Development/test fixture only. This is not production-approved disclaimer copy. */
+const copy: BilingualText = {
+  en: 'Development fixture: coaching support only. It does not provide medical care or emergency support.',
+  ar: 'محتوى تجريبي للتطوير: دعم توجيهي فقط، ولا يقدم رعاية طبية أو دعمًا للطوارئ.',
+};
 
 export const COACHING_DISCLAIMER_V1 = {
   version: '1.0',
@@ -19,5 +23,5 @@ export const COACHING_DISCLAIMER_V1 = {
 } as const;
 
 export function approvedDisclaimerContentAvailable(): boolean {
-  return Boolean(COACHING_DISCLAIMER_V1.copy.en && COACHING_DISCLAIMER_V1.copy.ar);
+  return process.env.NODE_ENV !== 'production' && Boolean(COACHING_DISCLAIMER_V1.copy.en && COACHING_DISCLAIMER_V1.copy.ar);
 }

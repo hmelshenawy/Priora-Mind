@@ -10,6 +10,7 @@ import {
   ConversationLlmError,
   normalizeConversationLlmError,
   type ConversationLlmFailureCode,
+  type LlmRequestDiagnostics,
 } from './conversation-llm.errors';
 import type { ConversationLlmProviderClient } from './conversation-llm-provider';
 import type { ConversationLlmProvider } from './conversation-llm-response';
@@ -39,7 +40,9 @@ export class ConversationLlmAdapter implements ConversationAiPort {
       [
         ...request.productInstructions,
         'Return concise JSON matching the required schema.',
+        'When supporting evidence is supplied, return non-empty content and at least one citation.',
         'Citations must exactly copy chunk_id, source_id, and text_hash from supplied chunks.',
+        'Each citation object must contain exactly chunk_id, source_id, and text_hash with no additional fields.',
       ].join('\n'),
       JSON.stringify({
         turnContext: {
@@ -132,9 +135,13 @@ export class ConversationLlmAdapter implements ConversationAiPort {
     try {
       return await this.client.complete({ instructions, input, schemaName, schema });
     } catch (error) {
+      if (error instanceof ConversationLlmError) {
+        this.logFailure(stage, requestId, error.code, error.diagnostics);
+        throw error;
+      }
       const code = normalizeConversationLlmError(error);
       this.logFailure(stage, requestId, code);
-      throw error instanceof ConversationLlmError ? error : new ConversationLlmError(code);
+      throw new ConversationLlmError(code);
     }
   }
 
@@ -171,13 +178,21 @@ export class ConversationLlmAdapter implements ConversationAiPort {
     throw new ConversationLlmError(code);
   }
 
-  private logFailure(stage: Stage, requestId: string, failureCode: ConversationLlmFailureCode): void {
+  private logFailure(
+    stage: Stage,
+    requestId: string,
+    failureCode: ConversationLlmFailureCode,
+    diagnostics?: LlmRequestDiagnostics,
+  ): void {
+    // Structured, redaction-safe: only transport metadata is emitted. Prompts,
+    // user content, response bodies, API keys, and stack traces are never logged.
     this.logger.warn({
       provider: this.provider,
       model: this.model || 'unconfigured',
       processingStage: stage,
       failureCode,
       requestId,
+      diagnostics,
     });
   }
 }

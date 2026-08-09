@@ -34,6 +34,46 @@ function makeService(stored: unknown = null, ai = new FakeConversationAiAdapter(
 }
 
 describe('conversation failure and retry e2e', () => {
+  it('continues low-risk distress through grounded coaching without assuming self-harm', async () => {
+    const ai = new FakeConversationAiAdapter();
+    const generate = vi.spyOn(ai, 'generateGroundedAnswer');
+    const { service, messages, rag } = makeService(null, ai);
+    await service.send('u1', 'c-fail', { content: 'I am feeling depressed' }, 'k-low-risk');
+    expect(rag.searchCalls).toHaveLength(1);
+    expect(generate).toHaveBeenCalledTimes(1);
+    expect(messages.createAssistantFailure).not.toHaveBeenCalled();
+    expect(messages.createAssistantMessage).toHaveBeenCalledWith(
+      expect.anything(), expect.anything(), expect.anything(), expect.anything(),
+      'RAG', 'COMPLETED', 'LLM', null, null, expect.any(Date), expect.any(Object),
+    );
+  });
+
+  it('fails closed at SAFETY and does not call RAG or LLM on a technical safety failure', async () => {
+    const ai = new FakeConversationAiAdapter();
+    const generate = vi.spyOn(ai, 'generateGroundedAnswer');
+    const { service, messages, rag } = makeService(null, ai);
+    await service.send('u1', 'c-fail', { content: '__safety_check_throw__' }, 'k-safety-failure');
+    expect(rag.searchCalls).toHaveLength(0);
+    expect(generate).not.toHaveBeenCalled();
+    expect(messages.createAssistantMessage).toHaveBeenCalledWith(
+      expect.anything(), expect.anything(), expect.anything(), expect.anything(),
+      'SAFETY', 'FAILED', 'SAFETY', 'SAFETY_UNAVAILABLE', 'safety_check_failed', expect.any(Date),
+    );
+  });
+
+  it('preserves the approved safety response and bypasses downstream processing for self-harm language', async () => {
+    const ai = new FakeConversationAiAdapter();
+    const generate = vi.spyOn(ai, 'generateGroundedAnswer');
+    const { service, messages, rag } = makeService(null, ai);
+    await service.send('u1', 'c-fail', { content: 'I feel suicidal' }, 'k-high-risk');
+    expect(rag.searchCalls).toHaveLength(0);
+    expect(generate).not.toHaveBeenCalled();
+    expect(messages.createAssistantMessage).toHaveBeenCalledWith(
+      expect.anything(), expect.anything(), expect.anything(), expect.stringContaining('immediate danger'),
+      'SAFETY', 'COMPLETED', 'SAFETY', null, null, expect.any(Date),
+    );
+  });
+
   it('persists LLM failures as one safe assistant failure', async () => {
     const ai = new FakeConversationAiAdapter();
     vi.spyOn(ai, 'generateGroundedAnswer').mockRejectedValue(new ConversationLlmError('LLM_TIMEOUT'));

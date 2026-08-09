@@ -30,7 +30,7 @@ async function bootstrap(): Promise<void> {
   app.enableCors({ credentials: true, origin: env.CORS_ORIGIN });
   app.useGlobalFilters(new AllExceptionsFilter());
 
-  await app.listen(env.PORT);
+  await app.listen(env.PORT || 3000);
   Logger.log(`Priora Mind backend listening on :${env.PORT}`, 'Bootstrap');
 }
 

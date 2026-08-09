@@ -15,6 +15,13 @@ describe('conversation safety routing', () => {
     });
   });
 
+  it('keeps ordinary low-risk distress in the normal coaching pipeline', async () => {
+    await expect(safety.evaluate('I am feeling depressed')).resolves.toEqual({
+      route: 'none',
+      level: 'NORMAL',
+    });
+  });
+
   it('fails closed on safety check technical failure', async () => {
     await expect(safety.evaluate('__safety_check_throw__')).resolves.toMatchObject({
       route: 'failed',

@@ -1,8 +1,8 @@
 import { describe, expect, it, vi } from 'vitest';
-import { ConversationAccessService } from '../../../src/modules/conversations/conversation-access.service';
-import { ConversationLifecycleService } from '../../../src/modules/conversations/conversation-lifecycle.service';
-import type { ConversationRepository } from '../../../src/modules/conversations/conversation.repository';
-import type { ConversationMessageRepository } from '../../../src/modules/conversations/conversation-message.repository';
+import { ConversationAccessService } from '../../../src/modules/conversations/services/conversation-access.service';
+import { ConversationLifecycleService } from '../../../src/modules/conversations/services/conversation-lifecycle.service';
+import type { ConversationRepository } from '../../../src/modules/conversations/repositories/conversation.repository';
+import type { ConversationMessageRepository } from '../../../src/modules/conversations/repositories/conversation-message.repository';
 
 const row = {
   id: '11111111-1111-4111-8111-111111111111',

@@ -2,14 +2,15 @@ import { Module } from '@nestjs/common';
 import { AuthModule } from '../auth/auth.module';
 import { ProfileModule } from '../profile/profile.module';
 import { SafetyModule } from '../safety/safety.module';
-import { AssessmentController } from './assessment.controller';
-import { AssessmentDeletionService } from './assessment-deletion.service';
-import { AssessmentAnswerStore } from './assessment-answer-store.service';
-import { AssessmentLifecycleService } from './assessment-lifecycle.service';
-import { AssessmentResultService } from './assessment-result.service';
-import { AssessmentSubmitService } from './assessment-submit.service';
+import { AssessmentController } from './controllers/assessment.controller';
+import { AssessmentDeletionService } from './services/assessment-deletion.service';
+import { AssessmentAnswerStore } from './services/assessment-answer-store.service';
+import { AssessmentLifecycleService } from './services/assessment-lifecycle.service';
+import { AssessmentResultService } from './services/assessment-result.service';
+import { AssessmentSubmitService } from './services/assessment-submit.service';
 import { ASSESSMENT_DELETION_PORT } from './ports/assessment-deletion.port';
-import { ScoringService } from './scoring.service';
+import { AssessmentOnboardingService } from './services/assessment-onboarding.service';
+import { ScoringService } from './services/scoring.service';
 
 /**
  * Assessment feature module (US4–US6). Owns Assessment / AssessmentAnswer /
@@ -27,6 +28,7 @@ import { ScoringService } from './scoring.service';
   providers: [
     ScoringService,
     AssessmentAnswerStore,
+    AssessmentOnboardingService,
     AssessmentLifecycleService,
     AssessmentResultService,
     AssessmentSubmitService,

@@ -19,7 +19,7 @@ import { NOTICE_VERSION_V1 } from '../../prisma/seed/notice-versions';
 import {
   CURRENT_STATE_QUESTIONS,
   REQUIRED_COACHING_IDS,
-} from '../../src/modules/assessment/assessment-definition';
+} from '../../src/modules/assessment/constants/assessment-definition';
 
 /**
  * T075 — US8 resume / restart / safe-restart (FR-014, FR-014b, FR-034, SC-007).

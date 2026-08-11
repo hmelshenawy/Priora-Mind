@@ -18,7 +18,7 @@ import { EMAIL_PORT } from '../../src/modules/auth/ports/email.port';
 import { FakeEmailAdapter } from '../../src/modules/auth/ports/fake-email.adapter';
 import { InMemoryPrisma } from '../helpers/in-memory-prisma';
 import { NOTICE_VERSION_V1 } from '../../prisma/seed/notice-versions';
-import { CURRENT_STATE_QUESTIONS } from '../../src/modules/assessment/assessment-definition';
+import { CURRENT_STATE_QUESTIONS } from '../../src/modules/assessment/constants/assessment-definition';
 
 /**
  * T088 — Backend-enforced user-data isolation (FR-027..FR-029, SC-008, AC-X3).

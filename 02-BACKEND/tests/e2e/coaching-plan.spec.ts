@@ -1,13 +1,13 @@
 import { HttpException } from '@nestjs/common';
 import { describe, expect, it, vi } from 'vitest';
 import { InMemoryPrisma } from '../helpers/in-memory-prisma';
-import { FakeCoachingLlmAdapter } from '../../src/modules/ai/fake-coaching-llm.adapter';
-import { CoachingActionService } from '../../src/modules/coaching/coaching-action.service';
-import { CoachingController } from '../../src/modules/coaching/coaching.controller';
-import { CoachingGenerationService } from '../../src/modules/coaching/coaching-generation.service';
-import { CoachingPlanService } from '../../src/modules/coaching/coaching-plan.service';
-import { ActionConflictException, PlanNotActiveException, PlanNotReadyException, SafetyHoldException } from '../../src/modules/coaching/coaching.errors';
-import type { ScoredResultDto } from '../../src/modules/assessment/assessment.dto';
+import { FakeCoachingLlmAdapter } from '../../src/modules/ai/services/fake-coaching-llm.adapter';
+import { CoachingActionService } from '../../src/modules/coaching/services/coaching-action.service';
+import { CoachingController } from '../../src/modules/coaching/controllers/coaching.controller';
+import { CoachingGenerationService } from '../../src/modules/coaching/services/coaching-generation.service';
+import { CoachingPlanService } from '../../src/modules/coaching/services/coaching-plan.service';
+import { ActionConflictException, PlanNotActiveException, PlanNotReadyException, SafetyHoldException } from '../../src/modules/coaching/constants/coaching.errors';
+import type { ScoredResultDto } from '../../src/modules/assessment/dto/assessment.dto';
 import type { GroundingBundle } from '../../src/modules/coaching/ports/coaching-llm.port';
 
 const result1: ScoredResultDto = {

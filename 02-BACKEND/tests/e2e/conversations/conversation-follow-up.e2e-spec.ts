@@ -1,8 +1,8 @@
 import { describe, expect, it, vi } from 'vitest';
-import { FakeConversationAiAdapter } from '../../../src/modules/ai/fake-conversation-ai.adapter';
-import { ConversationMessageService } from '../../../src/modules/conversations/conversation-message.service';
-import { ConversationRouterService } from '../../../src/modules/conversations/conversation-router.service';
-import { ConversationSafetyService } from '../../../src/modules/conversations/conversation-safety.service';
+import { FakeConversationAiAdapter } from '../../../src/modules/ai/services/fake-conversation-ai.adapter';
+import { ConversationMessageService } from '../../../src/modules/conversations/services/conversation-message.service';
+import { ConversationRouterService } from '../../../src/modules/conversations/services/conversation-router.service';
+import { ConversationSafetyService } from '../../../src/modules/conversations/services/conversation-safety.service';
 import { FakeConversationRagClient } from '../../helpers/fake-conversation-rag-client';
 
 const conversation = {

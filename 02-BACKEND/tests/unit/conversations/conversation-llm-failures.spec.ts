@@ -2,8 +2,8 @@ import { describe, expect, it } from 'vitest';
 import {
   ConversationLlmError,
   normalizeConversationLlmError,
-} from '../../../src/modules/ai/conversation-llm.adapter';
-import { ConversationCitationMapper } from '../../../src/modules/conversations/conversation-citation-mapper';
+} from '../../../src/modules/ai/services/conversation-llm.adapter';
+import { ConversationCitationMapper } from '../../../src/modules/conversations/utils/conversation-citation-mapper';
 
 describe('conversation LLM failures', () => {
   it('normalizes configured provider failure classes', () => {

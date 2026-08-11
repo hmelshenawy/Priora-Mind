@@ -1,5 +1,5 @@
 import type { PrismaClient } from '@prisma/client';
-import { COACHING_DISCLAIMER_V1 } from '../../src/modules/coaching/coaching-disclaimer';
+import { COACHING_DISCLAIMER_V1 } from '../../src/modules/coaching/constants/coaching-disclaimer';
 
 export async function seedCoachingDisclaimer(prisma: PrismaClient): Promise<void> {
   const existing = await prisma.coachingDisclaimer.findUnique({

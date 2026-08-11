@@ -1,9 +1,9 @@
 import { describe, expect, it, vi } from 'vitest';
-import { ConversationLlmError } from '../../../src/modules/ai/conversation-llm.adapter';
-import { FakeConversationAiAdapter } from '../../../src/modules/ai/fake-conversation-ai.adapter';
-import { ConversationMessageService } from '../../../src/modules/conversations/conversation-message.service';
-import { ConversationRouterService } from '../../../src/modules/conversations/conversation-router.service';
-import { ConversationSafetyService } from '../../../src/modules/conversations/conversation-safety.service';
+import { ConversationLlmError } from '../../../src/modules/ai/services/conversation-llm.adapter';
+import { FakeConversationAiAdapter } from '../../../src/modules/ai/services/fake-conversation-ai.adapter';
+import { ConversationMessageService } from '../../../src/modules/conversations/services/conversation-message.service';
+import { ConversationRouterService } from '../../../src/modules/conversations/services/conversation-router.service';
+import { ConversationSafetyService } from '../../../src/modules/conversations/services/conversation-safety.service';
 import { FakeConversationRagClient } from '../../helpers/fake-conversation-rag-client';
 
 const conversation = { id: 'c-fail', userId: 'u1', title: null, status: 'ACTIVE' as const, createdAt: new Date(), updatedAt: new Date(), lastMessageAt: null };

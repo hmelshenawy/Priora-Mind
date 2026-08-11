@@ -17,7 +17,7 @@ import { EMAIL_PORT } from '../../src/modules/auth/ports/email.port';
 import { FakeEmailAdapter } from '../../src/modules/auth/ports/fake-email.adapter';
 import { InMemoryPrisma } from '../helpers/in-memory-prisma';
 import { NOTICE_VERSION_V1 } from '../../prisma/seed/notice-versions';
-import { CURRENT_STATE_QUESTIONS } from '../../src/modules/assessment/assessment-definition';
+import { CURRENT_STATE_QUESTIONS } from '../../src/modules/assessment/constants/assessment-definition';
 import { SAFETY_COPY } from '../../src/modules/safety/safety-definition';
 
 /**

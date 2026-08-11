@@ -1,7 +1,7 @@
 import { BadRequestException } from '@nestjs/common';
 import { describe, expect, it } from 'vitest';
-import { sendConversationMessageSchema } from '../../../src/modules/conversations/conversation.dto';
-import { ConversationMessageService } from '../../../src/modules/conversations/conversation-message.service';
+import { sendConversationMessageSchema } from '../../../src/modules/conversations/dto/conversation.dto';
+import { ConversationMessageService } from '../../../src/modules/conversations/services/conversation-message.service';
 
 describe('conversation send-message contract', () => {
   it('validates content and rejects empty messages', () => {

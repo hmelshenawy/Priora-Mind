@@ -1,4 +1,4 @@
-import type { BilingualText, CoachingLibraryContent } from '../coaching-library';
+import type { BilingualText, CoachingLibraryContent } from '../constants/coaching-library';
 
 export const COACHING_LLM_PORT = Symbol('COACHING_LLM_PORT');
 

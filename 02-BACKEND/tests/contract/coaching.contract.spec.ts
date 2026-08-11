@@ -2,14 +2,14 @@ import { HttpException } from '@nestjs/common';
 import { GUARDS_METADATA } from '@nestjs/common/constants';
 import { describe, expect, it, vi } from 'vitest';
 import { InMemoryPrisma } from '../helpers/in-memory-prisma';
-import { CoachingController } from '../../src/modules/coaching/coaching.controller';
-import { CoachingActionService } from '../../src/modules/coaching/coaching-action.service';
-import { CoachingPlanService } from '../../src/modules/coaching/coaching-plan.service';
-import { ActionConflictException, ActionResultNotFoundException, NoCurrentPlanException, PlanNotActiveException, PlanNotReadyException, PlanUnavailableException, SafetyHoldException } from '../../src/modules/coaching/coaching.errors';
+import { CoachingController } from '../../src/modules/coaching/controllers/coaching.controller';
+import { CoachingActionService } from '../../src/modules/coaching/services/coaching-action.service';
+import { CoachingPlanService } from '../../src/modules/coaching/services/coaching-plan.service';
+import { ActionConflictException, ActionResultNotFoundException, NoCurrentPlanException, PlanNotActiveException, PlanNotReadyException, PlanUnavailableException, SafetyHoldException } from '../../src/modules/coaching/constants/coaching.errors';
 import { EmailVerifiedGuard } from '../../src/modules/auth/guards/email-verified.guard';
 import { JwtAuthGuard } from '../../src/modules/auth/guards/jwt-auth.guard';
-import { ResultNotFoundException } from '../../src/modules/assessment/assessment.errors';
-import type { ScoredResultDto } from '../../src/modules/assessment/assessment.dto';
+import { ResultNotFoundException } from '../../src/modules/assessment/constants/assessment.errors';
+import type { ScoredResultDto } from '../../src/modules/assessment/dto/assessment.dto';
 
 const result1: ScoredResultDto = {
   resultId: 'result-1',

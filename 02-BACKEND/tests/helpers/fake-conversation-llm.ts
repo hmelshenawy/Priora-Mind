@@ -1,1 +1,1 @@
-export { FakeConversationAiAdapter } from '../../src/modules/ai/fake-conversation-ai.adapter';
+export { FakeConversationAiAdapter } from '../../src/modules/ai/services/fake-conversation-ai.adapter';

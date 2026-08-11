@@ -1,8 +1,8 @@
 import { describe, expect, it } from 'vitest';
-import { CONVERSATION_COMMAND_RESPONSES, CONVERSATION_FALLBACKS } from '../../../src/modules/conversations/conversation.constants';
-import { ConversationFollowUpDetector } from '../../../src/modules/conversations/conversation-follow-up-detector';
-import { ConversationRouterService } from '../../../src/modules/conversations/conversation-router.service';
-import { buildInsufficientEvidenceResponse } from '../../../src/modules/conversations/conversation-insufficient-evidence';
+import { CONVERSATION_COMMAND_RESPONSES, CONVERSATION_FALLBACKS } from '../../../src/modules/conversations/constants/conversation.constants';
+import { ConversationFollowUpDetector } from '../../../src/modules/conversations/utils/conversation-follow-up-detector';
+import { ConversationRouterService } from '../../../src/modules/conversations/services/conversation-router.service';
+import { buildInsufficientEvidenceResponse } from '../../../src/modules/conversations/utils/conversation-insufficient-evidence';
 
 describe('Spec 004 acceptance matrix AC-X1 through AC-X9', () => {
   it('covers route order, grounded fallback, bounded follow-up, safe failures, and deferred MVP exclusions', () => {

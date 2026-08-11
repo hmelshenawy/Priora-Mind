@@ -1,5 +1,5 @@
 import type { Prisma, PrismaClient } from '@prisma/client';
-import { COACHING_LIBRARY_V1, coachingLibraryIntegrity, type CoachingLibraryContent } from '../../src/modules/coaching/coaching-library';
+import { COACHING_LIBRARY_V1, coachingLibraryIntegrity, type CoachingLibraryContent } from '../../src/modules/coaching/constants/coaching-library';
 
 export async function seedCoachingLibrary(prisma: PrismaClient): Promise<void> {
   const existing = await prisma.coachingActionLibrary.findUnique({

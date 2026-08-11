@@ -5,7 +5,7 @@ import {
   listConversationsQuerySchema,
   patchConversationSchema,
   sendConversationMessageSchema,
-} from '../../../src/modules/conversations/conversation.dto';
+} from '../../../src/modules/conversations/dto/conversation.dto';
 
 describe('conversation API contract foundation', () => {
   it('rejects client-supplied user ids in create payloads', () => {

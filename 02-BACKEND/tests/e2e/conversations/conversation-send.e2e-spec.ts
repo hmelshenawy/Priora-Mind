@@ -1,8 +1,8 @@
 import { describe, expect, it, vi } from 'vitest';
-import { ConversationArchivedException } from '../../../src/modules/conversations/conversation.errors';
-import { ConversationMessageService } from '../../../src/modules/conversations/conversation-message.service';
-import { ConversationRouterService } from '../../../src/modules/conversations/conversation-router.service';
-import { ConversationSafetyService } from '../../../src/modules/conversations/conversation-safety.service';
+import { ConversationArchivedException } from '../../../src/modules/conversations/constants/conversation.errors';
+import { ConversationMessageService } from '../../../src/modules/conversations/services/conversation-message.service';
+import { ConversationRouterService } from '../../../src/modules/conversations/services/conversation-router.service';
+import { ConversationSafetyService } from '../../../src/modules/conversations/services/conversation-safety.service';
 
 const conversation = {
   id: 'conversation-1',

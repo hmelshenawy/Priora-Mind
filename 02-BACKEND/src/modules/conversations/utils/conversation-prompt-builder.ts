@@ -1,6 +1,6 @@
 import { Injectable } from '@nestjs/common';
-import type { ConversationHistoryItem } from '../../ai/ports/conversation-ai.port';
-import type { ConversationRagChunk } from '../rag/conversation-rag-client.port';
+import type { ConversationHistoryItem } from '../../ai/ai.public';
+import type { RetrievedChunk } from '../../retrieval/retrieval.public';
 import { CONVERSATION_SYSTEM_INSTRUCTIONS } from '../constants/conversation-system.prompt';
 
 export interface ConversationGroundedPrompt {
@@ -8,7 +8,7 @@ export interface ConversationGroundedPrompt {
   recentHistory: ConversationHistoryItem[];
   currentMessage: string;
   standaloneRetrievalQuery: string;
-  chunks: ConversationRagChunk[];
+  chunks: RetrievedChunk[];
 }
 
 @Injectable()
@@ -17,7 +17,7 @@ export class ConversationPromptBuilder {
     recentHistory: ConversationHistoryItem[];
     currentMessage: string;
     standaloneRetrievalQuery: string;
-    chunks: ConversationRagChunk[];
+    chunks: RetrievedChunk[];
   }): ConversationGroundedPrompt {
     return {
       productInstructions: [...CONVERSATION_SYSTEM_INSTRUCTIONS],

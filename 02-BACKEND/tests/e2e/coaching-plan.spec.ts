@@ -8,7 +8,7 @@ import { CoachingGenerationService } from '../../src/modules/coaching/services/c
 import { CoachingPlanService } from '../../src/modules/coaching/services/coaching-plan.service';
 import { ActionConflictException, PlanNotActiveException, PlanNotReadyException, SafetyHoldException } from '../../src/modules/coaching/constants/coaching.errors';
 import type { ScoredResultDto } from '../../src/modules/assessment/dto/assessment.dto';
-import type { GroundingBundle } from '../../src/modules/coaching/ports/coaching-llm.port';
+import type { GroundingBundle } from '../../src/modules/ai/ai.public';
 
 const result1: ScoredResultDto = {
   resultId: 'result-1',

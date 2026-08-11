@@ -27,6 +27,8 @@ export interface DeletionCategoryCounters {
 export const AUTH_DELETION_PORT = Symbol('AUTH_DELETION_PORT');
 
 export interface AuthDeletionPort {
+  /** Mark deletion accepted to block processing; false means already removed. */
+  prepareAccountDeletion(userId: string, acceptedAt: Date): Promise<boolean>;
   /** Scheduled retention: unverified + pre-consent accounts (tokens cascade). */
   deleteExpired(cutoffs: AuthCutoffs): Promise<DeletionCategoryCounters>;
   /** Account deletion (Consent §9): remove a user's consent records (idempotent). */

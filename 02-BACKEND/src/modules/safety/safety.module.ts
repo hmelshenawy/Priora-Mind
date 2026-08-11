@@ -1,10 +1,11 @@
 import { Module } from '@nestjs/common';
 import { AuthModule } from '../auth/auth.module';
 import { ProfileModule } from '../profile/profile.module';
-import { SafetyController } from './safety.controller';
-import { SafetyService } from './safety.service';
-import { SafetyReentryService } from './safety-reentry.service';
-import { SafetyDeletionService } from './safety-deletion.service';
+import { AssessmentSafetyLifecycleModule } from '../assessment/assessment-safety-lifecycle.module';
+import { SafetyController } from './controllers/safety.controller';
+import { SafetyService } from './services/safety.service';
+import { SafetyReentryService } from './services/safety-reentry.service';
+import { SafetyDeletionService } from './services/safety-deletion.service';
 import { SAFETY_DELETION_PORT } from './ports/safety-deletion.port';
 
 /**
@@ -14,15 +15,14 @@ import { SAFETY_DELETION_PORT } from './ports/safety-deletion.port';
  * SEPARATE from assessment scoring and from the AI provider (FR-019/FR-020).
  *
  * Imports AuthModule (ConsentService — consent gate for the safety_hold step) and
- * ProfileModule (OnboardingGuard — journey ordering). Safety does NOT import
- * AssessmentModule (no circular DI); AssessmentModule imports SafetyModule to call
- * SafetyService during per-answer + on-submit evaluation. SafetyService writes
- * OnboardingState/Assessment state via Prisma directly for routing transitions
- * (mirroring the codebase pattern). SafetyDeletionService is exported via the
+ * ProfileModule (Profile-owned onboarding lifecycle) and the narrow
+ * AssessmentSafetyLifecycleModule (Assessment-owned suspend/resume capabilities).
+ * Safety does not import AssessmentModule, so AssessmentModule may import
+ * SafetyModule for evaluation without circular DI. SafetyDeletionService is exported via the
  * SAFETY_DELETION_PORT token for the RetentionModule (Polish, T068).
  */
 @Module({
-  imports: [AuthModule, ProfileModule],
+  imports: [AuthModule, ProfileModule, AssessmentSafetyLifecycleModule],
   controllers: [SafetyController],
   providers: [
     SafetyService,

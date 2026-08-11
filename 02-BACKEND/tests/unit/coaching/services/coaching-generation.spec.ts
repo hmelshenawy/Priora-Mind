@@ -4,8 +4,8 @@ import { FakeCoachingLlmAdapter } from '../../../../src/modules/ai/services/fake
 import { CoachingGenerationService } from '../../../../src/modules/coaching/services/coaching-generation.service';
 import { approvedDisclaimerContentAvailable } from '../../../../src/modules/coaching/constants/coaching-disclaimer';
 import { approvedLibraryContentAvailable } from '../../../../src/modules/coaching/constants/coaching-library';
-import type { ScoredResultDto } from '../../../../src/modules/assessment/dto/assessment.dto';
-import type { GroundingBundle, LlmPlanResult } from '../../../../src/modules/coaching/ports/coaching-llm.port';
+import type { ScoredResultDto } from '../../../../src/modules/assessment/assessment.public';
+import type { GroundingBundle, LlmPlanResult } from '../../../../src/modules/ai/ai.public';
 
 const result: ScoredResultDto = {
   resultId: 'result-1',

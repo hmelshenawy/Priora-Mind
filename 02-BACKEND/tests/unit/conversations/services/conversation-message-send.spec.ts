@@ -37,19 +37,19 @@ import { ConversationRouterService } from '../../../../src/modules/conversations
 import { ConversationSafetyService } from '../../../../src/modules/conversations/services/conversation-safety.service';
 import { CONVERSATION_FALLBACKS } from '../../../../src/modules/conversations/constants/conversation.constants';
 import { buildInsufficientEvidenceResponse } from '../../../../src/modules/conversations/utils/conversation-insufficient-evidence';
-import { SAFETY_COPY } from '../../../../src/modules/safety/safety-definition';
+import { SAFETY_COPY } from '../../../../src/modules/safety/constants/safety-definition';
 import { FakeConversationAiAdapter } from '../../../../src/modules/ai/services/fake-conversation-ai.adapter';
-import { ConversationLlmError } from '../../../../src/modules/ai/services/conversation-llm.adapter';
+import { ConversationLlmError } from '../../../../src/modules/ai/ai.public';
 import type {
   ConversationAiPort,
   FollowUpRewriteRequest,
   FollowUpRewriteResult,
   GroundedAnswerRequest,
   GroundedAnswerResult,
-} from '../../../../src/modules/ai/ports/conversation-ai.port';
+} from '../../../../src/modules/ai/ai.public';
 import type {
-  ConversationRagSearchResult,
-} from '../../../../src/modules/conversations/rag/conversation-rag-client.port';
+  RetrievalSearchResult,
+} from '../../../../src/modules/retrieval/retrieval.public';
 
 const USER_ID = 'user-1';
 const CONVERSATION_ID = 'conversation-1';
@@ -82,7 +82,7 @@ const validChunk = {
   citation_section: 'paced-breathing',
 };
 
-const okRagResult: ConversationRagSearchResult = {
+const okRagResult: RetrievalSearchResult = {
   status: 'ok',
   correlationId: 'corr',
   chunks: [validChunk],
@@ -215,7 +215,7 @@ type RagFake = {
   health: ReturnType<typeof vi.fn>;
 };
 
-function makeRag(result: ConversationRagSearchResult = okRagResult): RagFake {
+function makeRag(result: RetrievalSearchResult = okRagResult): RagFake {
   return {
     search: vi.fn(async () => result),
     health: vi.fn(async () => ({ status: 'ok', correlationId: 'corr' })),

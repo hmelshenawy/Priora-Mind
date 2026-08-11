@@ -1,7 +1,7 @@
 import { describe, expect, it, vi } from 'vitest';
 import { CoachingGenerationService } from '../../src/modules/coaching/services/coaching-generation.service';
 import { validateLlmPlanOutput } from '../../src/modules/coaching/utils/coaching-plan-validator';
-import type { GroundingBundle } from '../../src/modules/coaching/ports/coaching-llm.port';
+import type { GroundingBundle } from '../../src/modules/ai/ai.public';
 
 const result = {
   resultId: 'result-1',

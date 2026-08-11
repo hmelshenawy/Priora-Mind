@@ -4,7 +4,7 @@ import {
   GOAL_QUESTIONS,
   type DomainCode,
 } from '../constants/assessment-definition';
-import type { SafetyRoute } from '../../safety/safety.dto';
+import type { SafetyRoute } from '../../safety/safety.public';
 import type { ResultInsight } from './result-presenter';
 
 /**

@@ -1,12 +1,12 @@
 import { Inject, Injectable, Logger } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import type { Response } from 'express';
-import { PrismaService } from '../../prisma/prisma.service';
-import { JwtTokenService, type JwtPayload } from './tokens/jwt-token.service';
-import { RefreshCookieService } from './tokens/refresh-cookie.service';
-import { generateToken, hashToken } from './tokens/token-hash';
-import { EMAIL_PORT, type EmailPort } from './ports/email.port';
-import { hashPassword, verifyPassword } from './password.util';
+import { PrismaService } from '../../../prisma/prisma.service';
+import { JwtTokenService, type JwtPayload } from '../tokens/jwt-token.service';
+import { RefreshCookieService } from '../tokens/refresh-cookie.service';
+import { generateToken, hashToken } from '../tokens/token-hash';
+import { EMAIL_PORT, type EmailPort } from '../ports/email.port';
+import { hashPassword, verifyPassword } from '../utils/password.util';
 import {
   RESEND_ACK_MESSAGE,
   REGISTER_ACK_MESSAGE,
@@ -16,12 +16,12 @@ import {
   type ResendVerificationInput,
   type VerifyEmailQuery,
   type VerifyEmailResponse,
-} from './auth.dto';
+} from '../dto/auth.dto';
 import {
   InvalidCredentialsException,
   TokenExpiredOrUsedException,
   TokenInvalidException,
-} from './auth.errors';
+} from '../constants/auth.errors';
 
 const VERIFICATION_TTL_MS = 24 * 60 * 60 * 1000; // 24h — single-use, short-lived.
 

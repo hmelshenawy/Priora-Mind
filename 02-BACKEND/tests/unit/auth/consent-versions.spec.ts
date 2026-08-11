@@ -1,17 +1,17 @@
 import { describe, it, expect, beforeEach } from 'vitest';
-import '../helpers/test-env';
-import { PrismaService } from '../../src/prisma/prisma.service';
-import { ConsentService } from '../../src/modules/auth/consent.service';
+import '../../helpers/test-env';
+import { PrismaService } from '../../../src/prisma/prisma.service';
+import { ConsentService } from '../../../src/modules/auth/services/consent.service';
 import {
   AcknowledgmentsIncompleteException,
   NoticesUnavailableException,
   ReconsentRequiredException,
-} from '../../src/modules/auth/consent.errors';
-import { InMemoryPrisma } from '../helpers/in-memory-prisma';
+} from '../../../src/modules/auth/constants/consent.errors';
+import { InMemoryPrisma } from '../../helpers/in-memory-prisma';
 import {
   NOTICE_VERSION_V1,
   NOTICE_VERSION_V2_TERMS,
-} from '../../prisma/seed/notice-versions';
+} from '../../../prisma/seed/notice-versions';
 
 /**
  * T029 — ConsentService unit tests: notice-version mismatch → re-consent, and

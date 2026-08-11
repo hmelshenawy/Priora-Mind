@@ -4,6 +4,7 @@ import { AssessmentModule } from '../assessment/assessment.module';
 import { AuthModule } from '../auth/auth.module';
 import { ProfileModule } from '../profile/profile.module';
 import { SafetyModule } from '../safety/safety.module';
+import { RetrievalModule } from '../retrieval/retrieval.module';
 import { CoachingController } from './controllers/coaching.controller';
 import { CoachingActionService } from './services/coaching-action.service';
 import { CoachingDeletionService } from './services/coaching-deletion.service';
@@ -12,10 +13,9 @@ import { CoachingGenerationService } from './services/coaching-generation.servic
 import { CoachingGroundingService } from './services/coaching-grounding.service';
 import { CoachingPlanService } from './services/coaching-plan.service';
 import { COACHING_DELETION_PORT } from './ports/coaching-deletion.port';
-import { RAG_CLIENT_PORT, RagApiClientService } from './rag/rag-client.service';
 
 @Module({
-  imports: [AuthModule, ProfileModule, SafetyModule, AssessmentModule, AiModule],
+  imports: [AuthModule, ProfileModule, SafetyModule, AssessmentModule, AiModule, RetrievalModule],
   controllers: [CoachingController],
   providers: [
     CoachingEligibilityService,
@@ -24,10 +24,8 @@ import { RAG_CLIENT_PORT, RagApiClientService } from './rag/rag-client.service';
     CoachingPlanService,
     CoachingActionService,
     CoachingDeletionService,
-    RagApiClientService,
     { provide: COACHING_DELETION_PORT, useExisting: CoachingDeletionService },
-    { provide: RAG_CLIENT_PORT, useExisting: RagApiClientService },
   ],
-  exports: [COACHING_DELETION_PORT, CoachingDeletionService],
+  exports: [COACHING_DELETION_PORT],
 })
 export class CoachingModule {}

@@ -597,7 +597,7 @@ enum TriggerContext {
 /// Versioned, immutable safety definition (data-model §12, research D5). `content`
 /// holds the full v1.0 SQ questions + classification matrix as JSON. Source:
 /// Safety_Decision_Matrix v1.0. A new version is a new row. The application uses the
-/// typed constant SAFETY_QUESTIONS (src/modules/safety/safety-definition.ts) as the
+/// typed constant SAFETY_QUESTIONS (src/modules/safety/constants/safety-definition.ts) as the
 /// behavioral source of truth; this row is the immutable audit/version record.
 model SafetyDefinition {
   id          String   @id @default(uuid())

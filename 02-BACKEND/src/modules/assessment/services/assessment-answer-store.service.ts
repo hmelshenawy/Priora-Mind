@@ -1,7 +1,7 @@
 import { Injectable } from '@nestjs/common';
 import { Prisma } from '@prisma/client';
 import { PrismaService } from '../../../prisma/prisma.service';
-import { SQ02_TRIGGER_CODES, type Sq01Code, type Sq02Code, type Sq03Code } from '../../safety/safety-definition';
+import { SafetyService, type Sq01Code, type Sq02Code, type Sq03Code } from '../../safety/safety.public';
 import {
   ASSESSMENT_DEFINITION_VERSION,
   COACHING_QUESTION_IDS,
@@ -18,7 +18,10 @@ import {
  */
 @Injectable()
 export class AssessmentAnswerStore {
-  constructor(private readonly prisma: PrismaService) {}
+  constructor(
+    private readonly prisma: PrismaService,
+    private readonly safety: SafetyService,
+  ) {}
 
   /** Required-question completeness for submit (FR-014a). Returns missing ids in the
    * full required order: 16 current-state + AG-01/02/03, then SQ-01, SQ-02 (when
@@ -117,7 +120,7 @@ export class AssessmentAnswerStore {
   private async requiredIds(assessmentId: string): Promise<string[]> {
     const sq01 = await this.storedSq01(assessmentId);
     const safety: string[] = ['SQ-01'];
-    if (sq01 && SQ02_TRIGGER_CODES.includes(sq01)) safety.push('SQ-02');
+    if (sq01 && this.safety.requiresFollowUpForSq01(sq01)) safety.push('SQ-02');
     safety.push('SQ-03');
     return [...REQUIRED_COACHING_IDS, ...safety];
   }

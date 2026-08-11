@@ -1,11 +1,11 @@
 import { describe, it, expect } from 'vitest';
-import { classifySafety } from '../../src/modules/safety/safety-classifier';
-import type { ClassifierInput } from '../../src/modules/safety/safety-classifier';
+import { classifySafety } from '../../../../src/modules/safety/utils/safety-classifier';
+import type { ClassifierInput } from '../../../../src/modules/safety/utils/safety-classifier';
 import {
   DISTRESS_DOMAIN_THRESHOLD,
   DISTRESS_MIN_DOMAINS,
   MOOD_DOMAIN,
-} from '../../src/modules/safety/safety-definition';
+} from '../../../../src/modules/safety/constants/safety-definition';
 
 /**
  * T059 — pure safety-classifier unit tests (Safety_Decision_Matrix §5 + §12 required

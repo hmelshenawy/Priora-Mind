@@ -1,5 +1,5 @@
-import { Injectable } from '@nestjs/common';
-import { SAFETY_COPY, type SafetyLevel } from '../../safety/safety-definition';
+import { Injectable, Optional } from '@nestjs/common';
+import { SafetyService } from '../../safety/safety.public';
 import { CONVERSATION_FALLBACKS } from '../constants/conversation.constants';
 
 export type ConversationSafetyDecision =
@@ -9,11 +9,16 @@ export type ConversationSafetyDecision =
 
 @Injectable()
 export class ConversationSafetyService {
+  constructor(@Optional() private readonly safety?: SafetyService) {}
+
   async evaluate(content: string): Promise<ConversationSafetyDecision> {
     try {
-      const level = this.classifyContent(content);
+      const decision = this.safety
+        ? this.safety.evaluateConversation(content)
+        : SafetyService.evaluateConversation(content);
+      const { level } = decision;
       if (level === 'HIGH_RISK' || level === 'CRISIS') {
-        return { route: 'safety', level, content: SAFETY_COPY[level].en };
+        return { route: 'safety', level, content: decision.content };
       }
       return { route: 'none', level };
     } catch {
@@ -25,25 +30,4 @@ export class ConversationSafetyService {
     }
   }
 
-  private classifyContent(content: string): SafetyLevel {
-    const normalized = content.toLowerCase();
-    if (normalized.includes('__safety_check_throw__')) throw new Error('safety check failed');
-    if (
-      normalized.includes('immediate danger') ||
-      normalized.includes('kill myself now') ||
-      normalized.includes('harm myself now') ||
-      normalized.includes('suicide now')
-    ) {
-      return 'CRISIS';
-    }
-    if (
-      normalized.includes('kill myself') ||
-      normalized.includes('harm myself') ||
-      normalized.includes('suicidal') ||
-      normalized.includes('self-harm')
-    ) {
-      return 'HIGH_RISK';
-    }
-    return 'NORMAL';
-  }
 }

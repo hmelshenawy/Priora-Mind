@@ -10,7 +10,7 @@ import { PrismaService } from '../../src/prisma/prisma.service';
 import { validateEnv } from '../../src/common/config';
 import { AllExceptionsFilter } from '../../src/common/filters/all-exceptions.filter';
 import { AuthModule } from '../../src/modules/auth/auth.module';
-import { AuthDeletionService } from '../../src/modules/auth/auth-deletion.service';
+import { AuthDeletionService } from '../../src/modules/auth/services/auth-deletion.service';
 import { EMAIL_PORT } from '../../src/modules/auth/ports/email.port';
 import { FakeEmailAdapter } from '../../src/modules/auth/ports/fake-email.adapter';
 import { InMemoryPrisma } from '../helpers/in-memory-prisma';

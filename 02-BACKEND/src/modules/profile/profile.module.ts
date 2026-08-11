@@ -6,6 +6,7 @@ import { ProfileController } from './profile.controller';
 import { ProfileService } from './profile.service';
 import { ProfileDeletionService } from './profile-deletion.service';
 import { PROFILE_DELETION_PORT } from './ports/profile-deletion.port';
+import { ProfileLifecycleService } from './profile-lifecycle.service';
 
 /**
  * Profile feature module (US3). Owns Profile / Preferences / OnboardingState
@@ -19,10 +20,15 @@ import { PROFILE_DELETION_PORT } from './ports/profile-deletion.port';
   controllers: [ProfileController],
   providers: [
     ProfileService,
+    ProfileLifecycleService,
     ProfileDeletionService,
     { provide: OnboardingGuardService, useClass: OnboardingGuardServiceImpl },
     { provide: PROFILE_DELETION_PORT, useExisting: ProfileDeletionService },
   ],
-  exports: [OnboardingGuardService, ProfileDeletionService, PROFILE_DELETION_PORT],
+  exports: [
+    OnboardingGuardService,
+    ProfileLifecycleService,
+    PROFILE_DELETION_PORT,
+  ],
 })
 export class ProfileModule {}

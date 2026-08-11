@@ -1,6 +1,6 @@
 import { Injectable } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
-import type { CoachingLlmPort, GroundingBundle, LlmPlanResult } from '../../coaching/ports/coaching-llm.port';
+import type { CoachingLlmPort, GroundingBundle, LlmPlanResult } from '../ports/coaching-llm.port';
 import { COACHING_PLAN_SCHEMA, isPlanOutput } from '../dto/coaching-plan.schema';
 import { ConversationLlmError, normalizeConversationLlmError } from '../utils/conversation-llm.errors';
 import type { ConversationLlmProviderClient } from '../ports/conversation-llm-provider';

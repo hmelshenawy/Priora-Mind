@@ -67,13 +67,7 @@ export class OllamaConversationLlmProvider implements ConversationLlmProviderCli
 
       // Read the body as text first so a mid-stream reset (network) is not
       // conflated with a JSON parse failure (invalid output).
-      let text: string;
-      try {
-        text = await response.text();
-      } catch (error) {
-        // Re-throw raw — classified as transport below.
-        throw error;
-      }
+      const text = await response.text();
       let body: unknown;
       try {
         body = JSON.parse(text);

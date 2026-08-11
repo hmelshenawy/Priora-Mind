@@ -2,12 +2,12 @@ import {
   APPROVED_RESOURCES,
   SAFETY_ACTIONS,
   SAFETY_COPY,
-} from './safety-definition';
+} from '../constants/safety-definition';
 import type {
   EmergencyResourceDto,
   SafetyActionDto,
   SafetyRoute,
-} from './safety.dto';
+} from '../dto/safety.dto';
 
 /**
  * Pure safety-route builder (Constitution VIII split — handwritten files MUST NOT

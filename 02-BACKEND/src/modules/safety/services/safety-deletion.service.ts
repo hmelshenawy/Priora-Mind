@@ -1,10 +1,6 @@
 import { Injectable, Logger } from '@nestjs/common';
-import { PrismaService } from '../../prisma/prisma.service';
-import type {
-  SafetyCutoffs,
-  SafetyDeletionPort,
-  DeletionCategoryCounters,
-} from './ports/safety-deletion.port';
+import { PrismaService } from '../../../prisma/prisma.service';
+import type { SafetyDeletionPort, DeletionCategoryCounters } from '../ports/safety-deletion.port';
 
 /**
  * Safety-side deletion (T068, research D10, data-model §14). Hard-deletes
@@ -15,10 +11,8 @@ import type {
  * logs (FR-030, research D7) — only sanitized integer counters.
  *
  * `SafetyEvaluation.assessmentId` is a LOOSE reference (no FK), so assessment
- * deletion does not cascade; this service is the explicit cleanup. It reads
- * `Assessment` rows via Prisma directly to find expired incomplete assessments
- * (mirroring the cross-module-via-Prisma pattern; Safety never imports
- * AssessmentModule).
+ * deletion does not cascade. Retention passes sanitized Assessment-owned candidate
+ * IDs; this service owns only SafetyEvaluation deletion.
  */
 @Injectable()
 export class SafetyDeletionService implements SafetyDeletionPort {
@@ -26,23 +20,15 @@ export class SafetyDeletionService implements SafetyDeletionPort {
 
   constructor(private readonly prisma: PrismaService) {}
 
-  async deleteExpired(cutoffs: SafetyCutoffs): Promise<DeletionCategoryCounters> {
+  async deleteExpiredForAssessmentIds(assessmentIds: string[]): Promise<DeletionCategoryCounters> {
+    if (assessmentIds.length === 0) return { deleted: 0, errors: 0 };
     let deleted = 0;
     let errors = 0;
     try {
-      const expired = await this.prisma.assessment.findMany({
-        where: {
-          lastActivityAt: { lt: cutoffs.incompleteBefore },
-          state: { in: ['NOT_STARTED', 'IN_PROGRESS', 'SUSPENDED'] },
-        },
+      const res = await this.prisma.safetyEvaluation.deleteMany({
+        where: { assessmentId: { in: assessmentIds } },
       });
-      const ids = expired.map((a) => a.id);
-      if (ids.length > 0) {
-        const res = await this.prisma.safetyEvaluation.deleteMany({
-          where: { assessmentId: { in: ids } },
-        });
-        deleted += res.count;
-      }
+      deleted += res.count;
     } catch (err) {
       errors += 1;
       this.logger.warn(`safety-expired deletion failed: ${errName(err)}`);

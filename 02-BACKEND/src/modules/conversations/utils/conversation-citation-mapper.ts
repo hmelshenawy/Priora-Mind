@@ -1,11 +1,11 @@
 import { Injectable } from '@nestjs/common';
-import type { GroundedAnswerResult } from '../../ai/ports/conversation-ai.port';
+import type { GroundedAnswerResult } from '../../ai/ai.public';
 import type { AssistantSourceRowLike } from '../dto/conversation-presenter';
-import type { ConversationRagChunk } from '../rag/conversation-rag-client.port';
+import type { RetrievedChunk } from '../../retrieval/retrieval.public';
 
 @Injectable()
 export class ConversationCitationMapper {
-  map(answer: GroundedAnswerResult, chunks: ConversationRagChunk[]): AssistantSourceRowLike[] {
+  map(answer: GroundedAnswerResult, chunks: RetrievedChunk[]): AssistantSourceRowLike[] {
     const allowed = new Map(chunks.map((chunk) => [chunk.chunk_id, chunk]));
     return answer.citations.map((citation, index) => {
       const chunk = allowed.get(citation.chunk_id);

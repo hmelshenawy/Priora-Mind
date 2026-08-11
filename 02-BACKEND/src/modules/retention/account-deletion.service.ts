@@ -1,23 +1,23 @@
 import { Injectable, Logger, Inject } from '@nestjs/common';
 import { PrismaService } from '../../prisma/prisma.service';
 import { toSafeLogContext } from '../../common/redact';
-import { AUTH_DELETION_PORT, type AuthDeletionPort } from '../auth/ports/auth-deletion.port';
+import { AUTH_DELETION_PORT, type AuthDeletionPort } from '../auth/auth.public';
 import {
   PROFILE_DELETION_PORT,
   type ProfileDeletionPort,
-} from '../profile/ports/profile-deletion.port';
+} from '../profile/profile.public';
 import {
   ASSESSMENT_DELETION_PORT,
   type AssessmentDeletionPort,
-} from '../assessment/ports/assessment-deletion.port';
+} from '../assessment/assessment.public';
 import {
   COACHING_DELETION_PORT,
   type CoachingDeletionPort,
-} from '../coaching/ports/coaching-deletion.port';
+} from '../coaching/coaching.public';
 import {
   SAFETY_DELETION_PORT,
   type SafetyDeletionPort,
-} from '../safety/ports/safety-deletion.port';
+} from '../safety/safety.public';
 
 /**
  * User-initiated account deletion (Consent policy §9, FR-031, research D10).
@@ -68,14 +68,9 @@ export class AccountDeletionService {
     const start = new Date();
 
     // Idempotent no-op: account already fully gone (prior completed request).
-    const user = await this.prisma.userAccount.findUnique({ where: { id: userId } });
-    if (!user) {
+    const accountExists = await this.auth.prepareAccountDeletion(userId, now);
+    if (!accountExists) {
       return { status: 'completed', confirmation_id: confirmationId, completed: true };
-    }
-
-    // 1) Block new processing on acceptance BEFORE touching any data (Consent §9).
-    if (user.deletedAt === null) {
-      await this.prisma.userAccount.update({ where: { id: userId }, data: { deletedAt: now } });
     }
 
     // 2) Per-module deletion in referential order. Each port is idempotent.

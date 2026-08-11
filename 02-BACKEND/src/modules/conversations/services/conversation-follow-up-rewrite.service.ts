@@ -1,6 +1,10 @@
 import { Inject, Injectable, Optional } from '@nestjs/common';
-import type { ConversationAiPort, ConversationHistoryItem, FollowUpRewriteResult } from '../../ai/ports/conversation-ai.port';
-import { CONVERSATION_AI_PORT } from '../../ai/ports/conversation-ai.port';
+import {
+  CONVERSATION_AI_PORT,
+  type ConversationAiPort,
+  type ConversationHistoryItem,
+  type FollowUpRewriteResult,
+} from '../../ai/ai.public';
 
 export type FollowUpRewriteOutcome =
   | { status: 'ok'; result: FollowUpRewriteResult }

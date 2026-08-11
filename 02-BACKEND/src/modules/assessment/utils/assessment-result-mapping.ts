@@ -7,8 +7,12 @@ import {
   type ResultResponse,
   type ScoredResultDto,
 } from '../dto/assessment.dto';
-import type { Sq01Code, Sq02Code, Sq03Code } from '../../safety/safety-definition';
-import type { ClassifierDomainScore } from '../../safety/safety-classifier';
+import type {
+  SafetyEvaluationDomainScore,
+  Sq01Code,
+  Sq02Code,
+  Sq03Code,
+} from '../../safety/safety.public';
 
 /**
  * Pure result-mapping helpers extracted from AssessmentSubmitService (Constitution
@@ -79,8 +83,8 @@ export function extractSqAnswers(
  *  dropped. Scoring stays SEPARATE from safety classification — read-only projection. */
 export function toClassifierDomainScores(
   domainScores: Record<DomainCode, { score: number; band: unknown }>,
-): Record<string, ClassifierDomainScore> {
-  const out: Record<string, ClassifierDomainScore> = {};
+): Record<string, SafetyEvaluationDomainScore> {
+  const out: Record<string, SafetyEvaluationDomainScore> = {};
   for (const [domain, v] of Object.entries(domainScores)) {
     out[domain] = { score: v.score };
   }

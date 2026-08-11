@@ -1,6 +1,23 @@
-import type { BilingualText, CoachingLibraryContent } from '../constants/coaching-library';
-
 export const COACHING_LLM_PORT = Symbol('COACHING_LLM_PORT');
+
+export interface AiBilingualText {
+  en: string;
+  ar: string;
+}
+export interface AiCoachingLibraryContent {
+  domains: Array<{
+    domain: string;
+    focusAreaReasons: Record<string, AiBilingualText>;
+    goals: Array<{
+      libraryKey: string;
+      copy: AiBilingualText;
+      actions: Array<{ libraryKey: string; copy: AiBilingualText; pacingLabel?: AiBilingualText }>;
+    }>;
+  }>;
+  pacingLabels: Record<string, AiBilingualText>;
+  titleTemplates: AiBilingualText[];
+  summaryTemplates: AiBilingualText[];
+}
 
 export interface GroundingBundle {
   assessment: {
@@ -15,9 +32,9 @@ export interface GroundingBundle {
   focusAreaEvidence: Array<{ domain: string; source: 'priority' | 'support' | 'lowest_band' }>;
   profile: Record<string, unknown>;
   libraryVersion: string;
-  library: CoachingLibraryContent;
+  library: AiCoachingLibraryContent;
   disclaimerVersion: string;
-  disclaimer: BilingualText;
+  disclaimer: AiBilingualText;
   promptVersion: string;
   instructions: string[];
   ragContext?: {
@@ -40,19 +57,19 @@ export interface GroundingBundle {
 
 export interface LlmPlanOutput {
   version: string;
-  title: BilingualText;
-  summary: BilingualText;
+  title: AiBilingualText;
+  summary: AiBilingualText;
   focusAreas: Array<{
     domain: string;
     source: 'priority' | 'support' | 'lowest_band';
-    reason: BilingualText;
+    reason: AiBilingualText;
   }>;
   goals: Array<{ libraryKey: string }>;
   actions: Array<{
     libraryKey: string;
     position: number;
-    pacingLabel: BilingualText | null;
-    copy: BilingualText;
+    pacingLabel: AiBilingualText | null;
+    copy: AiBilingualText;
   }>;
   citations?: Array<{ chunk_id: string; source_id: string; text_hash: string }>;
   disclaimerReference: { version: string };

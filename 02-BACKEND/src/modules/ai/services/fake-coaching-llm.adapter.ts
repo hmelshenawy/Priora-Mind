@@ -1,4 +1,4 @@
-import type { CoachingLlmPort, GroundingBundle, LlmPlanResult } from '../../coaching/ports/coaching-llm.port';
+import type { CoachingLlmPort, GroundingBundle, LlmPlanResult } from '../ports/coaching-llm.port';
 
 export class FakeCoachingLlmAdapter implements CoachingLlmPort {
   calls = 0;

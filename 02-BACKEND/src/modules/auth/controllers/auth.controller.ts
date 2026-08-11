@@ -1,10 +1,10 @@
 import { Body, Controller, Get, HttpCode, Post, Query, Req, Res, UseGuards } from '@nestjs/common';
 import type { Request, Response } from 'express';
-import { ZodValidationPipe } from '../../common/validation/zod-validation.pipe';
-import { JwtAuthGuard } from './guards/jwt-auth.guard';
-import { REFRESH_COOKIE_NAME } from './tokens/refresh-cookie.service';
-import type { JwtPayload } from './tokens/jwt-token.service';
-import { AuthService } from './auth.service';
+import { ZodValidationPipe } from '../../../common/validation/zod-validation.pipe';
+import { JwtAuthGuard } from '../guards/jwt-auth.guard';
+import { REFRESH_COOKIE_NAME } from '../tokens/refresh-cookie.service';
+import type { JwtPayload } from '../tokens/jwt-token.service';
+import { AuthService } from '../services/auth.service';
 import {
   loginSchema,
   registerSchema,
@@ -14,7 +14,7 @@ import {
   type RegisterInput,
   type ResendVerificationInput,
   type VerifyEmailQuery,
-} from './auth.dto';
+} from '../dto/auth.dto';
 
 /**
  * Auth endpoints (contracts/auth.md). Base `/api/v1/auth` (global prefix applied).

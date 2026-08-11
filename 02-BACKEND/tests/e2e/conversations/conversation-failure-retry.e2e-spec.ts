@@ -1,5 +1,5 @@
 import { describe, expect, it, vi } from 'vitest';
-import { ConversationLlmError } from '../../../src/modules/ai/services/conversation-llm.adapter';
+import { ConversationLlmError } from '../../../src/modules/ai/ai.public';
 import { FakeConversationAiAdapter } from '../../../src/modules/ai/services/fake-conversation-ai.adapter';
 import { ConversationMessageService } from '../../../src/modules/conversations/services/conversation-message.service';
 import { ConversationRouterService } from '../../../src/modules/conversations/services/conversation-router.service';

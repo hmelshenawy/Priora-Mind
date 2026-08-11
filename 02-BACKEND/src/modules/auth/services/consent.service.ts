@@ -1,5 +1,5 @@
 import { Injectable, Logger } from '@nestjs/common';
-import { PrismaService } from '../../prisma/prisma.service';
+import { PrismaService } from '../../../prisma/prisma.service';
 import {
   type ConsentStatusResponse,
   type NoticesQuery,
@@ -7,12 +7,12 @@ import {
   type RecordConsentInput,
   type RecordConsentResponse,
   type VersionSet,
-} from './consent.dto';
+} from '../dto/consent.dto';
 import {
   AcknowledgmentsIncompleteException,
   NoticesUnavailableException,
   ReconsentRequiredException,
-} from './consent.errors';
+} from '../constants/consent.errors';
 
 /**
  * Consent domain service (FR-005..FR-008, FR-032, contracts/consent.md,

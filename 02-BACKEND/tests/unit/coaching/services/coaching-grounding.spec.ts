@@ -66,6 +66,35 @@ describe('CoachingGroundingService', () => {
     expect(db.coachingDisclaimer.findUnique).toHaveBeenCalledWith({ where: { version: COACHING_DISCLAIMER_V1.version } });
   });
 
+  it('makes one domain-owned Retrieval request with the unchanged query, limit, threshold, and correlation ID', async () => {
+    const retrieval = {
+      search: vi.fn().mockResolvedValue({
+        status: 'ok',
+        correlationId: 'coaching-result-1',
+        chunks: [{
+          chunk_id: 'chunk-1',
+          text: 'Approved grounding',
+          score: 0.9,
+          source_id: 'source-1',
+          source_title: 'Approved Source',
+          source_type: 'pdf',
+          chunk_index: 1,
+          text_hash: 'hash-1',
+        }],
+      }),
+    };
+
+    const bundle = await new CoachingGroundingService(prisma() as never, retrieval as never).assemble(scoredResult);
+
+    expect(retrieval.search).toHaveBeenCalledTimes(1);
+    expect(retrieval.search).toHaveBeenCalledWith({
+      question: 'Coaching guidance for stress, sleep. Support area: sleep.',
+      limit: 6,
+      score_threshold: 0.44,
+    }, 'coaching-result-1');
+    expect(bundle.ragContext?.chunks.map((item) => item.chunk_id)).toEqual(['chunk-1']);
+  });
+
   it('fails closed when the library snapshot is missing', async () => {
     await expect(new CoachingGroundingService(prisma({ library: null }) as never).assemble(scoredResult)).rejects.toBeInstanceOf(PlanUnavailableException);
   });

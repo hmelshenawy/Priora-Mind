@@ -1,5 +1,5 @@
 import type { CoachingLibraryContent } from '../constants/coaching-library';
-import type { GroundingBundle, LlmPlanOutput } from '../ports/coaching-llm.port';
+import type { GroundingBundle, LlmPlanOutput } from '../../ai/ai.public';
 
 export interface PlanValidationResult {
   valid: boolean;

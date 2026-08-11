@@ -2,7 +2,7 @@ import { HttpException } from '@nestjs/common';
 import { describe, expect, it, vi } from 'vitest';
 import { CoachingEligibilityService } from '../../../../src/modules/coaching/services/coaching-eligibility.service';
 import { SafetyHoldException } from '../../../../src/modules/coaching/constants/coaching.errors';
-import { ResultNotFoundException } from '../../../../src/modules/assessment/constants/assessment.errors';
+import { ResultNotFoundException } from '../../../../src/modules/assessment/assessment.public';
 
 const result = {
   resultId: 'result-1',

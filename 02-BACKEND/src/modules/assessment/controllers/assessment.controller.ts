@@ -10,9 +10,7 @@ import {
   UseGuards,
 } from '@nestjs/common';
 import type { Request } from 'express';
-import { JwtAuthGuard } from '../../auth/guards/jwt-auth.guard';
-import { EmailVerifiedGuard } from '../../auth/guards/email-verified.guard';
-import type { JwtPayload } from '../../auth/tokens/jwt-token.service';
+import { EmailVerifiedGuard, JwtAuthGuard, type JwtPayload } from '../../auth/auth.public';
 import { AssessmentLifecycleService } from '../services/assessment-lifecycle.service';
 import { AssessmentSubmitService } from '../services/assessment-submit.service';
 

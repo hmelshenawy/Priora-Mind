@@ -4,7 +4,7 @@ import { CoachingLlmAdapter } from '../../../src/modules/ai/services/coaching-ll
 import { isPlanOutput } from '../../../src/modules/ai/dto/coaching-plan.schema';
 import { ConversationLlmError } from '../../../src/modules/ai/utils/conversation-llm.errors';
 import { matchesConversationSchema } from '../../../src/modules/ai/utils/conversation-json-schema-validator';
-import type { GroundingBundle, LlmPlanOutput } from '../../../src/modules/coaching/ports/coaching-llm.port';
+import type { GroundingBundle, LlmPlanOutput } from '../../../src/modules/ai/ports/coaching-llm.port';
 
 const valid: LlmPlanOutput = {
   version: '1.0', title: { en: 'Plan', ar: 'خطة' }, summary: { en: 'Summary', ar: 'ملخص' },

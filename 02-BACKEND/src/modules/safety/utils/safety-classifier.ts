@@ -34,7 +34,7 @@ import {
   type Sq01Code,
   type Sq02Code,
   type Sq03Code,
-} from './safety-definition';
+} from '../constants/safety-definition';
 
 /** A single domain score (subset of the assessment DomainScoreView; only the numeric
  * score is consumed for the distress pattern). */

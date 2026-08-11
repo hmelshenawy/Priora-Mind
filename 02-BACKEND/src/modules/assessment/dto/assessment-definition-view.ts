@@ -1,4 +1,4 @@
-import { SAFETY_QUESTIONS } from '../../safety/safety-definition';
+import { SAFETY_QUESTIONS } from '../../safety/safety.public';
 import {
   ASSESSMENT_DEFINITION_V1,
   CURRENT_STATE_QUESTIONS,

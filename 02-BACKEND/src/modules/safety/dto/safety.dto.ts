@@ -1,4 +1,4 @@
-import type { BilingualEntry, SafetyLevel, TriggerContext } from './safety-definition';
+import type { BilingualEntry, SafetyLevel, TriggerContext } from '../constants/safety-definition';
 
 /**
  * Safety DTOs (contracts/safety.md). These shapes are the wire contract for

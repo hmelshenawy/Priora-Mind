@@ -10,7 +10,7 @@ export default defineConfig({
   test: {
     root: './',
     environment: 'node',
-    include: ['tests/unit/**/*.spec.ts', 'tests/contract/**/*.spec.ts'],
+    include: ['tests/unit/**/*.spec.ts', 'tests/contract/**/*.spec.ts', 'tests/architecture/**/*.spec.ts'],
     exclude: ['tests/e2e/**', 'node_modules/**', 'dist/**'],
     globals: false,
     coverage: {

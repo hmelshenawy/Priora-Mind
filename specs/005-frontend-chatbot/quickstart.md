@@ -31,6 +31,12 @@
 
 ## Verification Commands
 
+Backend architecture changes must also pass:
+
+```powershell
+npm -w 02-BACKEND run check:boundaries
+```
+
 Run from the repository root:
 
 ```powershell

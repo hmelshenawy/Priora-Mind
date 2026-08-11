@@ -18,7 +18,7 @@ import { FakeEmailAdapter } from '../../src/modules/auth/ports/fake-email.adapte
 import { InMemoryPrisma } from '../helpers/in-memory-prisma';
 import { NOTICE_VERSION_V1 } from '../../prisma/seed/notice-versions';
 import { CURRENT_STATE_QUESTIONS } from '../../src/modules/assessment/constants/assessment-definition';
-import { SAFETY_COPY } from '../../src/modules/safety/safety-definition';
+import { SAFETY_COPY } from '../../src/modules/safety/constants/safety-definition';
 
 /**
  * T060 — Safety contract (contracts/safety.md, FR-019..FR-025, Safety Matrix §4/§6/§9/§10).
@@ -397,7 +397,7 @@ describe('Safety contract (US6)', () => {
     expect(prisma.safetyEvaluationStore.size).toBe(1);
     // Import lazily to avoid hoisting the module graph; the deletion port is exported
     // by SafetyModule and resolved from the compiled module.
-    const { SafetyDeletionService } = await import('../../src/modules/safety/safety-deletion.service');
+    const { SafetyDeletionService } = await import('../../src/modules/safety/services/safety-deletion.service');
     const deletion = app.get(SafetyDeletionService);
     const counters = await deletion.deleteSafetyForUsers([userIdOf()]);
     expect(prisma.safetyEvaluationStore.size).toBe(0);

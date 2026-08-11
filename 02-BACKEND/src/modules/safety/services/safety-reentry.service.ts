@@ -1,16 +1,17 @@
 import { Injectable, Logger } from '@nestjs/common';
-import { PrismaService } from '../../prisma/prisma.service';
+import { ProfileLifecycleService } from '../../profile/profile.public';
+import { AssessmentSafetyLifecycleService } from '../../assessment/assessment.public';
 import {
   SQ02_TRIGGER_CODES,
   type Sq01Code,
   type Sq02Code,
   type Sq03Code,
-} from './safety-definition';
-import { classifySafety } from './safety-classifier';
-import { SafetyUnavailableException, errName } from './safety.errors';
-import { buildSafetyRoute } from './safety-route';
+} from '../constants/safety-definition';
+import { classifySafety } from '../utils/safety-classifier';
+import { SafetyUnavailableException, errName } from '../constants/safety.errors';
+import { buildSafetyRoute } from '../utils/safety-route';
 import { SafetyService } from './safety.service';
-import type { SafetyReentryBody, SafetyReentryResponse } from './safety.dto';
+import type { SafetyReentryBody, SafetyReentryResponse } from '../dto/safety.dto';
 
 /**
  * Safety re-entry flow (Constitution VIII split — handwritten files MUST NOT exceed
@@ -32,8 +33,9 @@ export class SafetyReentryService {
   private readonly logger = new Logger('SafetyReentryService');
 
   constructor(
-    private readonly prisma: PrismaService,
     private readonly safety: SafetyService,
+    private readonly profileLifecycle: ProfileLifecycleService,
+    private readonly assessmentLifecycle: AssessmentSafetyLifecycleService,
   ) {}
 
   /** `POST /safety/reentry` (Safety Matrix §9). See class doc. Fail-closed (503). */
@@ -47,8 +49,7 @@ export class SafetyReentryService {
       // resume, HIGH_RISK/CRISIS both hold. The on-submit evaluation (after resume +
       // completion) re-runs with domain scores for the final gating + distress_note.
       const { level, reasons } = classifySafety({ safety_answers: sqAnswers });
-      const assessment = await this.prisma.assessment.findFirst({ where: { userId } });
-      const assessmentId = assessment?.id ?? null;
+      const assessmentId = await this.assessmentLifecycle.currentAssessmentId(userId);
       const now = new Date();
       const row = await this.safety.persistEvaluation(
         userId,
@@ -110,13 +111,7 @@ export class SafetyReentryService {
   /** Re-entry resume (Safety Matrix §9): SAFETY_HOLD → ASSESSMENT_IN_PROGRESS and
    * SUSPENDED → IN_PROGRESS so the user may continue the assessment. */
   private async resumeAssessment(userId: string, now: Date): Promise<void> {
-    const assessment = await this.prisma.assessment.findFirst({ where: { userId } });
-    if (assessment && assessment.state === 'SUSPENDED') {
-      await this.prisma.assessment.update({
-        where: { id: assessment.id },
-        data: { state: 'IN_PROGRESS', lastActivityAt: now },
-      });
-    }
-    await this.safety.setOnboardingState(userId, 'ASSESSMENT_IN_PROGRESS', 'assessment', now);
+    await this.assessmentLifecycle.resumeAfterSafety(userId, now);
+    await this.profileLifecycle.releaseSafetyHoldToAssessment(userId, now);
   }
 }

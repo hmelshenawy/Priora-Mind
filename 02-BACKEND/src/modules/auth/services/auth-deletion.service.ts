@@ -1,6 +1,6 @@
 import { Injectable, Logger } from '@nestjs/common';
-import { PrismaService } from '../../prisma/prisma.service';
-import type { AuthCutoffs, AuthDeletionPort, DeletionCategoryCounters } from './ports/auth-deletion.port';
+import { PrismaService } from '../../../prisma/prisma.service';
+import type { AuthCutoffs, AuthDeletionPort, DeletionCategoryCounters } from '../ports/auth-deletion.port';
 
 /**
  * Auth-side deletion (T025 + T034). Hard-deletes expired unverified accounts and
@@ -18,6 +18,18 @@ export class AuthDeletionService implements AuthDeletionPort {
   private readonly logger = new Logger(AuthDeletionService.name);
 
   constructor(private readonly prisma: PrismaService) {}
+
+  async prepareAccountDeletion(userId: string, acceptedAt: Date): Promise<boolean> {
+    const account = await this.prisma.userAccount.findUnique({ where: { id: userId } });
+    if (!account) return false;
+    if (account.deletedAt === null) {
+      await this.prisma.userAccount.update({
+        where: { id: userId },
+        data: { deletedAt: acceptedAt },
+      });
+    }
+    return true;
+  }
 
   async deleteExpired(cutoffs: AuthCutoffs): Promise<DeletionCategoryCounters> {
     let deleted = 0;

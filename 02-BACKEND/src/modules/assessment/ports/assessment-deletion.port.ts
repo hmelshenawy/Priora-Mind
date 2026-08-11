@@ -26,11 +26,16 @@ export interface DeletionCategoryCounters {
   errors: number;
 }
 
+export interface AssessmentDeletionResult extends DeletionCategoryCounters {
+  /** Sanitized loose-reference IDs passed internally to Safety cleanup. */
+  assessmentIds: string[];
+}
+
 export const ASSESSMENT_DELETION_PORT = Symbol('ASSESSMENT_DELETION_PORT');
 
 export interface AssessmentDeletionPort {
   /** Scheduled retention: incomplete assessments + their answers (Consent §8). */
-  deleteExpired(cutoffs: AssessmentCutoffs): Promise<DeletionCategoryCounters>;
+  deleteExpired(cutoffs: AssessmentCutoffs): Promise<AssessmentDeletionResult>;
   /** Account deletion (Consent §9): remove a user's assessment data (idempotent). */
   deleteAssessmentForUsers(userIds: string[]): Promise<DeletionCategoryCounters>;
 }

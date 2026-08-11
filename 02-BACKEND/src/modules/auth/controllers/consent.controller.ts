@@ -9,17 +9,17 @@ import {
   UseGuards,
 } from '@nestjs/common';
 import type { Request } from 'express';
-import { ZodValidationPipe } from '../../common/validation/zod-validation.pipe';
-import { ConsentService } from './consent.service';
+import { ZodValidationPipe } from '../../../common/validation/zod-validation.pipe';
+import { ConsentService } from '../services/consent.service';
 import {
   noticesQuerySchema,
   recordConsentSchema,
   type NoticesQuery,
   type RecordConsentInput,
-} from './consent.dto';
-import { JwtAuthGuard } from './guards/jwt-auth.guard';
-import { EmailVerifiedGuard } from './guards/email-verified.guard';
-import type { JwtPayload } from './tokens/jwt-token.service';
+} from '../dto/consent.dto';
+import { JwtAuthGuard } from '../guards/jwt-auth.guard';
+import { EmailVerifiedGuard } from '../guards/email-verified.guard';
+import type { JwtPayload } from '../tokens/jwt-token.service';
 
 /**
  * Consent endpoints (contracts/consent.md). Base `/api/v1/onboarding` (global

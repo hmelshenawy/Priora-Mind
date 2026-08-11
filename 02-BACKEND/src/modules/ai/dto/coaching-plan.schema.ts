@@ -1,4 +1,4 @@
-import type { LlmPlanOutput } from '../../coaching/ports/coaching-llm.port';
+import type { LlmPlanOutput } from '../ports/coaching-llm.port';
 
 const bilingual = {
   type: 'object', additionalProperties: false, required: ['en', 'ar'],

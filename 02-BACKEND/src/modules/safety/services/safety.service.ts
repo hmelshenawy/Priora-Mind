@@ -1,26 +1,33 @@
 import { Injectable, Logger } from '@nestjs/common';
-import { PrismaService } from '../../prisma/prisma.service';
-import { ConsentService } from '../auth/consent.service';
-import {
-  OnboardingGuardService,
-  type OnboardingGuardContext,
-} from '../profile/onboarding.guard';
+import { PrismaService } from '../../../prisma/prisma.service';
+import { ProfileLifecycleService } from '../../profile/profile.public';
+import { AssessmentSafetyLifecycleService } from '../../assessment/assessment.public';
 import {
   SAFETY_COPY,
   SAFETY_DEFINITION_VERSION,
+  SQ02_TRIGGER_CODES,
+  type BilingualEntry,
   type SafetyLevel,
   type Sq01Code,
   type Sq02Code,
   type Sq03Code,
   type TriggerContext,
-} from './safety-definition';
-import { classifySafety, type ClassifierDomainScore } from './safety-classifier';
-import { SafetyUnavailableException, errName } from './safety.errors';
-import { buildSafetyRoute } from './safety-route';
+} from '../constants/safety-definition';
+import { classifySafety } from '../utils/safety-classifier';
+import { SafetyUnavailableException, errName } from '../constants/safety.errors';
+import { buildSafetyRoute } from '../utils/safety-route';
 import type {
   SafetyHoldResponse,
   SafetyRoute,
-} from './safety.dto';
+} from '../dto/safety.dto';
+
+export interface SafetyEvaluationDomainScore {
+  score: number;
+}
+
+export type SafetyConversationDecision =
+  | { level: 'NORMAL' | 'DISTRESS'; content: null }
+  | { level: 'HIGH_RISK' | 'CRISIS'; content: string };
 
 /**
  * SafetyService (FR-019a/FR-019b/FR-020..FR-025, Safety Matrix §4/§6/§9/§10, research
@@ -32,10 +39,10 @@ import type {
  * The re-entry flow (POST /safety/reentry) lives in `SafetyReentryService`, which
  * delegates persistence/guard/transition to this service (Constitution VIII split).
  *
- * Cross-module state (OnboardingState, Assessment state) is written via Prisma
- * directly here, mirroring the codebase pattern (assessment-lifecycle writes
- * OnboardingState directly). Safety never imports AssessmentModule → no circular DI;
- * AssessmentModule imports SafetyModule to call this service.
+ * Cross-module transitions use Profile- and Assessment-owned public lifecycle
+ * capabilities. Safety never imports AssessmentModule; it depends only on the
+ * narrow AssessmentSafetyLifecycleModule, so AssessmentModule can import
+ * SafetyModule without circular DI.
  *
  * NEVER persists/returns raw safety answers or reasons to logs/analytics (FR-030,
  * Safety Matrix §10). The `level` is the only coarse routing tag. Historical
@@ -47,9 +54,49 @@ export class SafetyService {
 
   constructor(
     private readonly prisma: PrismaService,
-    private readonly consent: ConsentService,
-    private readonly guard: OnboardingGuardService,
+    private readonly profileLifecycle: ProfileLifecycleService,
+    private readonly assessmentLifecycle: AssessmentSafetyLifecycleService,
   ) {}
+
+  /** Whether SQ-01 requires the canonical immediate-danger follow-up question. */
+  requiresFollowUpForSq01(code: Sq01Code): boolean {
+    return SQ02_TRIGGER_CODES.includes(code);
+  }
+
+  /** Approved deterministic DISTRESS support copy for assessment result projection. */
+  distressSupportCopy(): BilingualEntry {
+    return { en: SAFETY_COPY.DISTRESS.en, ar: SAFETY_COPY.DISTRESS.ar };
+  }
+
+  /** Conversation-specific deterministic safety evaluation. This deliberately
+   * preserves the existing Conversation keyword semantics rather than applying the
+   * assessment SQ classifier to free text. Throws on the existing technical-failure
+   * fixture so the Conversation boundary can preserve its fail-closed metadata. */
+  evaluateConversation(content: string): SafetyConversationDecision {
+    return SafetyService.evaluateConversation(content);
+  }
+
+  static evaluateConversation(content: string): SafetyConversationDecision {
+    const normalized = content.toLowerCase();
+    if (normalized.includes('__safety_check_throw__')) throw new Error('safety check failed');
+    if (
+      normalized.includes('immediate danger') ||
+      normalized.includes('kill myself now') ||
+      normalized.includes('harm myself now') ||
+      normalized.includes('suicide now')
+    ) {
+      return { level: 'CRISIS', content: SAFETY_COPY.CRISIS.en };
+    }
+    if (
+      normalized.includes('kill myself') ||
+      normalized.includes('harm myself') ||
+      normalized.includes('suicidal') ||
+      normalized.includes('self-harm')
+    ) {
+      return { level: 'HIGH_RISK', content: SAFETY_COPY.HIGH_RISK.en };
+    }
+    return { level: 'NORMAL', content: null };
+  }
 
   // ───────────────────────── per-answer evaluation ─────────────────────────
 
@@ -87,7 +134,7 @@ export class SafetyService {
     userId: string,
     assessmentId: string,
     sqAnswers: Partial<{ 'SQ-01': Sq01Code; 'SQ-02': Sq02Code; 'SQ-03': Sq03Code }>,
-    domainScores: Record<string, ClassifierDomainScore>,
+    domainScores: Record<string, SafetyEvaluationDomainScore>,
   ): Promise<{ level: SafetyLevel; safetyEvaluationId: string }> {
     try {
       const { level, reasons } = classifySafety({
@@ -168,19 +215,7 @@ export class SafetyService {
    * granted consent (mirrors the assessment services). Route guards are UX only.
    * Public so `SafetyReentryService` can reuse the same guard. */
   async assertCanEnter(userId: string): Promise<void> {
-    const ctx = await this.contextFor(userId);
-    this.guard.assertCanEnter('safety_hold', ctx);
-  }
-
-  private async contextFor(userId: string): Promise<OnboardingGuardContext> {
-    const row = await this.prisma.onboardingState.findFirst({ where: { userId } });
-    const consentGranted = await this.consent.hasGrantedCurrentConsent(userId);
-    return {
-      userId,
-      onboardingState: row?.state ?? 'NOT_STARTED',
-      emailVerified: true, // EmailVerifiedGuard enforced at the route
-      consentGranted,
-    };
+    await this.profileLifecycle.assertCanEnterSafetyHold(userId);
   }
 
   /** Append-only persist: flip the prior is_current row to false, then create the new
@@ -229,30 +264,9 @@ export class SafetyService {
     now: Date,
   ): Promise<void> {
     if (level === 'HIGH_RISK') {
-      await this.prisma.assessment.updateMany({
-        where: { id: assessmentId, state: { in: ['IN_PROGRESS', 'NOT_STARTED'] } },
-        data: { state: 'SUSPENDED', lastActivityAt: now },
-      });
+      await this.assessmentLifecycle.suspendForSafety(assessmentId, now);
     }
     // CRISIS: leave the assessment in IN_PROGRESS (interrupted); do not transition to SUSPENDED.
-    await this.setOnboardingState(userId, 'SAFETY_HOLD', 'safety_hold', now);
-  }
-
-  /** Conditional onboarding-state transition (only when currently SAFETY_HOLD or
-   * ASSESSMENT_IN_PROGRESS). Public so `SafetyReentryService` can resume the
-   * assessment's onboarding state. */
-  async setOnboardingState(
-    userId: string,
-    state: 'SAFETY_HOLD' | 'ASSESSMENT_IN_PROGRESS',
-    currentStep: 'safety_hold' | 'assessment',
-    now: Date,
-  ): Promise<void> {
-    const existing = await this.prisma.onboardingState.findFirst({ where: { userId } });
-    if (!existing) return;
-    if (existing.state !== 'SAFETY_HOLD' && existing.state !== 'ASSESSMENT_IN_PROGRESS') return;
-    await this.prisma.onboardingState.update({
-      where: { id: existing.id },
-      data: { state: state as never, currentStep, updatedAt: now, lastActivityAt: now },
-    });
+    await this.profileLifecycle.placeOnSafetyHold(userId, now);
   }
 }

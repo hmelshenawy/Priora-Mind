@@ -5,10 +5,14 @@ import { COACHING_LIBRARY_V1, approvedLibraryContentAvailable } from '../constan
 import { PlanUnavailableException } from '../constants/coaching.errors';
 import { CoachingGroundingService } from './coaching-grounding.service';
 import { validateLlmPlanOutput } from '../utils/coaching-plan-validator';
-import type { ScoredResultDto } from '../../assessment/dto/assessment.dto';
-import { COACHING_LLM_PORT, type CoachingLlmPort } from '../ports/coaching-llm.port';
-import type { GroundingBundle, LlmPlanOutput } from '../ports/coaching-llm.port';
-import { normalizeConversationLlmError } from '../../ai/utils/conversation-llm.errors';
+import type { ScoredResultDto } from '../../assessment/assessment.public';
+import {
+  COACHING_LLM_PORT,
+  normalizeAiFailureCode,
+  type CoachingLlmPort,
+  type GroundingBundle,
+  type LlmPlanOutput,
+} from '../../ai/ai.public';
 
 type Db = Record<string, { [method: string]: (...args: unknown[]) => unknown }> & {
   $transaction: <T>(fn: (tx: Db) => Promise<T>) => Promise<T>;
@@ -144,7 +148,7 @@ export class CoachingGenerationService {
         });
       });
     } catch (error) {
-      const code = error instanceof PlanUnavailableException ? 'PLAN_UNAVAILABLE' : normalizeConversationLlmError(error);
+      const code = error instanceof PlanUnavailableException ? 'PLAN_UNAVAILABLE' : normalizeAiFailureCode(error);
       await this.failAttempt(planId, attemptId, code, [code]);
     }
   }

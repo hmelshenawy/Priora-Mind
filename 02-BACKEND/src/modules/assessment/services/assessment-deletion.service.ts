@@ -2,6 +2,7 @@ import { Injectable, Logger } from '@nestjs/common';
 import { PrismaService } from '../../../prisma/prisma.service';
 import type {
   AssessmentCutoffs,
+  AssessmentDeletionResult,
   AssessmentDeletionPort,
   DeletionCategoryCounters,
 } from '../ports/assessment-deletion.port';
@@ -25,10 +26,18 @@ export class AssessmentDeletionService implements AssessmentDeletionPort {
 
   constructor(private readonly prisma: PrismaService) {}
 
-  async deleteExpired(cutoffs: AssessmentCutoffs): Promise<DeletionCategoryCounters> {
+  async deleteExpired(cutoffs: AssessmentCutoffs): Promise<AssessmentDeletionResult> {
     let deleted = 0;
     let errors = 0;
+    let assessmentIds: string[] = [];
     try {
+      const candidates = await this.prisma.assessment.findMany({
+        where: {
+          lastActivityAt: { lt: cutoffs.incompleteBefore },
+          state: { in: ['NOT_STARTED', 'IN_PROGRESS', 'SUSPENDED'] },
+        },
+      });
+      assessmentIds = candidates.map((assessment) => assessment.id);
       const res = await this.prisma.assessment.deleteMany({
         where: {
           lastActivityAt: { lt: cutoffs.incompleteBefore },
@@ -41,7 +50,7 @@ export class AssessmentDeletionService implements AssessmentDeletionPort {
       this.logger.warn(`assessment-expired deletion failed: ${errName(err)}`);
     }
     this.logger.log({ message: 'assessment-expired-deletion-run', deleted, errors });
-    return { deleted, errors };
+    return { deleted, errors, assessmentIds };
   }
 
   async deleteAssessmentForUsers(userIds: string[]): Promise<DeletionCategoryCounters> {

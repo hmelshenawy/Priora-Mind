@@ -1,5 +1,5 @@
 import { Injectable } from '@nestjs/common';
-import type { ConversationHistoryItem } from '../../ai/ports/conversation-ai.port';
+import type { ConversationHistoryItem } from '../../ai/ai.public';
 import { CONVERSATION_LIMITS } from '../constants/conversation.constants';
 import { ConversationMessageRepository } from '../repositories/conversation-message.repository';
 

@@ -1,8 +1,8 @@
 import { describe, it, expect } from 'vitest';
 import { createHash } from 'node:crypto';
-import { FakeEmailAdapter } from '../../src/modules/auth/ports/fake-email.adapter';
-import { generateToken, hashToken, sameHash } from '../../src/modules/auth/tokens/token-hash';
-import { InMemoryPrisma } from '../helpers/in-memory-prisma';
+import { FakeEmailAdapter } from '../../../src/modules/auth/ports/fake-email.adapter';
+import { generateToken, hashToken, sameHash } from '../../../src/modules/auth/tokens/token-hash';
+import { InMemoryPrisma } from '../../helpers/in-memory-prisma';
 
 /**
  * T018 — FakeEmailAdapter capture + verification-token hashing (research D2).

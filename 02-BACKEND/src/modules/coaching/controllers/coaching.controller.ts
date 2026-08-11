@@ -1,9 +1,7 @@
 import { Body, Controller, Get, HttpCode, Param, Patch, Post, Req, Res, UseGuards } from '@nestjs/common';
 import type { Request, Response } from 'express';
 import { ZodValidationPipe } from '../../../common/validation/zod-validation.pipe';
-import { EmailVerifiedGuard } from '../../auth/guards/email-verified.guard';
-import { JwtAuthGuard } from '../../auth/guards/jwt-auth.guard';
-import type { JwtPayload } from '../../auth/tokens/jwt-token.service';
+import { EmailVerifiedGuard, JwtAuthGuard, type JwtPayload } from '../../auth/auth.public';
 import { CoachingActionService } from '../services/coaching-action.service';
 import { type UpdateActionInput, updateActionSchema } from '../dto/coaching.dto';
 import { CoachingPlanService } from '../services/coaching-plan.service';

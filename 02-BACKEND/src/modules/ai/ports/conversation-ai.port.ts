@@ -1,6 +1,11 @@
-import type { ConversationRagChunk } from '../../conversations/rag/conversation-rag-client.port';
-
 export const CONVERSATION_AI_PORT = Symbol('CONVERSATION_AI_PORT');
+
+export interface GroundedChunk {
+  chunk_id: string;
+  source_id: string;
+  text_hash: string;
+  text: string;
+}
 
 export interface ConversationHistoryItem {
   role: 'user' | 'assistant';
@@ -13,7 +18,7 @@ export interface GroundedAnswerRequest {
   recentHistory: ConversationHistoryItem[];
   currentMessage: string;
   standaloneRetrievalQuery: string;
-  chunks: ConversationRagChunk[];
+  chunks: GroundedChunk[];
 }
 
 export interface GroundedAnswerResult {

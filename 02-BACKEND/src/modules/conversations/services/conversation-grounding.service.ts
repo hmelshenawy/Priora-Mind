@@ -1,14 +1,14 @@
 import { Injectable } from '@nestjs/common';
 import { CONVERSATION_LIMITS } from '../constants/conversation.constants';
-import type { ConversationRagChunk, ConversationRagSearchResult } from '../rag/conversation-rag-client.port';
+import type { RetrievedChunk, RetrievalSearchResult } from '../../retrieval/retrieval.public';
 
 @Injectable()
 export class ConversationGroundingService {
-  selectSufficientChunks(result: ConversationRagSearchResult): ConversationRagChunk[] {
+  selectSufficientChunks(result: RetrievalSearchResult): RetrievedChunk[] {
     if (result.status !== 'ok') return [];
     const seen = new Set<string>();
     let remainingChars = CONVERSATION_LIMITS.ragMaxContextChars;
-    const selected: ConversationRagChunk[] = [];
+    const selected: RetrievedChunk[] = [];
 
     for (const chunk of result.chunks) {
       if (!this.isValidChunk(chunk)) continue;
@@ -25,7 +25,7 @@ export class ConversationGroundingService {
     return selected;
   }
 
-  private isValidChunk(chunk: ConversationRagChunk): boolean {
+  private isValidChunk(chunk: RetrievedChunk): boolean {
     return Boolean(
       chunk.chunk_id?.trim() &&
         chunk.text?.trim() &&

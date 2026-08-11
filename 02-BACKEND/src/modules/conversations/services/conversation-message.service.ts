@@ -1,6 +1,10 @@
 import { BadRequestException, Inject, Injectable, Logger, Optional } from '@nestjs/common';
-import type { ConversationAiPort, ConversationHistoryItem } from '../../ai/ports/conversation-ai.port';
-import { CONVERSATION_AI_PORT } from '../../ai/ports/conversation-ai.port';
+import {
+  CONVERSATION_AI_PORT,
+  normalizeAiFailureCode,
+  type ConversationAiPort,
+  type ConversationHistoryItem,
+} from '../../ai/ai.public';
 import type { SendConversationMessageInput } from '../dto/conversation.dto';
 import { ConversationAccessService } from './conversation-access.service';
 import {
@@ -19,11 +23,9 @@ import { ConversationFollowUpDetector } from '../utils/conversation-follow-up-de
 import { ConversationFollowUpRewriteService } from './conversation-follow-up-rewrite.service';
 import { ConversationGroundingService } from './conversation-grounding.service';
 import { ConversationPromptBuilder } from '../utils/conversation-prompt-builder';
-import type { ConversationRagClientPort } from '../rag/conversation-rag-client.port';
-import { CONVERSATION_RAG_CLIENT_PORT } from '../rag/conversation-rag-client.port';
+import { RetrievalService } from '../../retrieval/retrieval.public';
 import { CONVERSATION_FALLBACKS, CONVERSATION_LIMITS } from '../constants/conversation.constants';
 import { buildInsufficientEvidenceResponse } from '../utils/conversation-insufficient-evidence';
-import { normalizeConversationLlmError } from '../../ai/services/conversation-llm.adapter';
 import { normalizeFailureCode, safeFailureDetail } from '../utils/conversation-failure-metadata';
 
 /** Resolved message-processing context shared by the persistence helpers. */
@@ -65,7 +67,7 @@ export class ConversationMessageService {
     private readonly idempotency: ConversationIdempotencyService,
     private readonly router: ConversationRouterService,
     private readonly safety: ConversationSafetyService,
-    @Optional() @Inject(CONVERSATION_RAG_CLIENT_PORT) private readonly rag?: ConversationRagClientPort,
+    @Optional() private readonly rag?: RetrievalService,
     @Optional() @Inject(CONVERSATION_AI_PORT) private readonly ai?: ConversationAiPort,
   ) {
     this.followUpDetector = new ConversationFollowUpDetector();
@@ -244,7 +246,7 @@ export class ConversationMessageService {
       }
       return answer;
     } catch (error) {
-      return { failureCode: normalizeConversationLlmError(error) } as const;
+      return { failureCode: normalizeAiFailureCode(error) } as const;
     }
   }
 

@@ -1,8 +1,8 @@
 import { Injectable } from '@nestjs/common';
 import { Prisma } from '@prisma/client';
 import { PrismaService } from '../../../prisma/prisma.service';
-import { SafetyService } from '../../safety/safety.service';
-import { SAFETY_COPY, type BilingualEntry } from '../../safety/safety-definition';
+import { SafetyService } from '../../safety/safety.public';
+import { ProfileLifecycleService } from '../../profile/profile.public';
 import { AssessmentAnswerStore } from './assessment-answer-store.service';
 import { ASSESSMENT_DEFINITION_VERSION } from '../constants/assessment-definition';
 import { type SubmitResponse } from '../dto/assessment.dto';
@@ -13,9 +13,8 @@ import {
   ResultNotFoundException,
   SafetyHoldException,
 } from '../constants/assessment.errors';
-import { presentResult, type ResultInsight } from '../dto/result-presenter';
+import { presentResult, type BilingualEntry, type ResultInsight } from '../dto/result-presenter';
 import { ScoringService } from './scoring.service';
-import { AssessmentOnboardingService } from './assessment-onboarding.service';
 import {
   collectGoalFreeText,
   collectPriorities,
@@ -52,14 +51,14 @@ import {
 export class AssessmentSubmitService {
   constructor(
     private readonly prisma: PrismaService,
-    private readonly onboarding: AssessmentOnboardingService,
+    private readonly profileLifecycle: ProfileLifecycleService,
     private readonly scoring: ScoringService,
     private readonly answers: AssessmentAnswerStore,
     private readonly safety: SafetyService,
   ) {}
 
   async submit(userId: string): Promise<SubmitResponse> {
-    await this.onboarding.assertCanEnter(userId);
+    await this.profileLifecycle.assertCanEnterAssessment(userId);
 
     // US5/US6 suppression (FR-019b): never present a result or complete while
     // SAFETY_HOLD. US5 has no classifier, so this is the defensive guard US6
@@ -134,7 +133,7 @@ export class AssessmentSubmitService {
       throw new SafetyHoldException(route ?? undefined);
     }
     const distressNote: BilingualEntry | null =
-      finalLevel === 'DISTRESS' ? { en: SAFETY_COPY.DISTRESS.en, ar: SAFETY_COPY.DISTRESS.ar } : null;
+      finalLevel === 'DISTRESS' ? this.safety.distressSupportCopy() : null;
 
     const result = await this.prisma.assessmentResult.create({
       data: {
@@ -155,7 +154,7 @@ export class AssessmentSubmitService {
       data: { state: 'SCORED' },
     });
     // US5: result presented → COMPLETED (data-model §7 line 151, FR-018).
-    await this.onboarding.transitionOnboarding(userId, ['ASSESSMENT_IN_PROGRESS', 'ASSESSMENT_SUBMITTED'], 'COMPLETED', now);
+    await this.profileLifecycle.markAssessmentComplete(userId, now);
 
     return this.insightResponse(result, false, distressNote);
   }
@@ -179,7 +178,7 @@ export class AssessmentSubmitService {
    * safety evaluation (US6, Safety §6). null unless the current level is DISTRESS. */
   private async distressNoteFor(userId: string): Promise<BilingualEntry | null> {
     const level = await this.safety.currentLevel(userId);
-    return level === 'DISTRESS' ? { en: SAFETY_COPY.DISTRESS.en, ar: SAFETY_COPY.DISTRESS.ar } : null;
+    return level === 'DISTRESS' ? this.safety.distressSupportCopy() : null;
   }
 
   /** Build the submit response carrying the presenter insight. `duplicate`
@@ -203,8 +202,7 @@ export class AssessmentSubmitService {
   /** FR-019b: throw 409 SAFETY_HOLD (no result) while onboarding is SAFETY_HOLD. US6
    * enriches the payload with the current `safety_route` when available. */
   private async assertNotSafetyHold(userId: string): Promise<void> {
-    const row = await this.prisma.onboardingState.findFirst({ where: { userId } });
-    if (row?.state === 'SAFETY_HOLD') {
+    if (await this.profileLifecycle.isOnSafetyHold(userId)) {
       const route = await this.safety.currentRoute(userId);
       throw new SafetyHoldException(route ?? undefined);
     }

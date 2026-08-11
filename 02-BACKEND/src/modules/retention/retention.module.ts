@@ -31,6 +31,5 @@ import { RetentionService } from './retention.service';
   imports: [AuthModule, ProfileModule, AssessmentModule, CoachingModule, SafetyModule],
   controllers: [AccountDeletionController],
   providers: [RetentionService, AccountDeletionService],
-  exports: [RetentionService, AccountDeletionService],
 })
 export class RetentionModule {}

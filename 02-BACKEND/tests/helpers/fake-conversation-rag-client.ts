@@ -1,30 +1,21 @@
 import type {
-  ConversationRagClientPort,
-  ConversationRagHealthResult,
-  ConversationRagSearchRequest,
-  ConversationRagSearchResult,
-} from '../../src/modules/conversations/rag/conversation-rag-client.port';
+  RetrievalSearchRequest,
+  RetrievalSearchResult,
+} from '../../src/modules/retrieval/retrieval.public';
 
-export class FakeConversationRagClient implements ConversationRagClientPort {
-  searchCalls: Array<{ request: ConversationRagSearchRequest; correlationId: string }> = [];
-  healthCalls: string[] = [];
-  nextSearchResult: ConversationRagSearchResult = {
+export class FakeConversationRagClient {
+  searchCalls: Array<{ request: RetrievalSearchRequest; correlationId: string }> = [];
+  nextSearchResult: RetrievalSearchResult = {
     status: 'ok',
     correlationId: 'corr-1',
     chunks: [],
   };
-  nextHealthResult: ConversationRagHealthResult = { status: 'ok', correlationId: 'corr-1' };
-
   async search(
-    request: ConversationRagSearchRequest,
+    request: RetrievalSearchRequest,
     correlationId: string,
-  ): Promise<ConversationRagSearchResult> {
+  ): Promise<RetrievalSearchResult> {
     this.searchCalls.push({ request, correlationId });
     return { ...this.nextSearchResult, correlationId };
   }
 
-  async health(correlationId: string): Promise<ConversationRagHealthResult> {
-    this.healthCalls.push(correlationId);
-    return { ...this.nextHealthResult, correlationId };
-  }
 }

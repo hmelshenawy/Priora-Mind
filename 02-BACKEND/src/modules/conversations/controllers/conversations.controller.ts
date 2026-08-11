@@ -14,9 +14,7 @@ import {
 } from '@nestjs/common';
 import type { Request } from 'express';
 import { ZodValidationPipe } from '../../../common/validation/zod-validation.pipe';
-import { EmailVerifiedGuard } from '../../auth/guards/email-verified.guard';
-import { JwtAuthGuard } from '../../auth/guards/jwt-auth.guard';
-import type { JwtPayload } from '../../auth/tokens/jwt-token.service';
+import { EmailVerifiedGuard, JwtAuthGuard, type JwtPayload } from '../../auth/auth.public';
 import {
   createConversationSchema,
   getConversationQuerySchema,

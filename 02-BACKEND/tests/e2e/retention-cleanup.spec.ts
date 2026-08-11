@@ -294,6 +294,43 @@ describe('Scheduled retention-cleanup (e2e)', () => {
     expect(prisma.assessmentAnswerStore.size).toBe(0);
   });
 
+  it('passes Assessment-owned expired candidate IDs to Safety-owned history deletion', async () => {
+    const token = await verifiedAccessToken('safety-retention@test.dev');
+    await agent
+      .post(`${ONB}/consent`)
+      .set(auth(token))
+      .send({
+        service_boundary_version: NOTICE_VERSION_V1.serviceBoundaryVersion,
+        terms_version: NOTICE_VERSION_V1.termsVersion,
+        privacy_notice_version: NOTICE_VERSION_V1.privacyNoticeVersion,
+        acknowledgments: { service_boundary: true, terms: true, privacy_notice: true },
+        consent_language_code: 'en',
+        product_channel_id: 'priora-mind-web',
+      });
+    await agent.put(`${ONB}/profile`).set(auth(token)).send({ language_code: 'en', timezone: 'UTC' });
+    await agent.put(`${A}/answers/AS-01`).set(auth(token)).send({ value: 2 });
+    const userId = [...prisma.userStore.values()].find((user) => user.email === 'safety-retention@test.dev')!.id;
+    const assessment = [...prisma.assessmentStore.values()].find((row) => row.userId === userId)!;
+    assessment.lastActivityAt = new Date(NOW.getTime() - 31 * MS_PER_DAY);
+    prisma.safetyEvaluation.create({
+      data: {
+        userId,
+        assessmentId: assessment.id,
+        definitionVersion: '1.0',
+        level: 'HIGH_RISK',
+        reasons: [],
+        triggerContext: 'per_answer',
+        isCurrent: true,
+        evaluatedAt: assessment.lastActivityAt,
+      },
+    });
+
+    await retention.runScheduledRetention(NOW);
+
+    expect(prisma.assessmentStore.has(assessment.id)).toBe(false);
+    expect([...prisma.safetyEvaluationStore.values()].some((row) => row.assessmentId === assessment.id)).toBe(false);
+  });
+
   // ── idempotency ─────────────────────────────────────────────────────
 
   it('re-running the same window is a no-op: one DeletionLog row, no extra deletions (idempotency)', async () => {

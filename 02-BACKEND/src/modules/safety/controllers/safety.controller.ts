@@ -1,11 +1,9 @@
 import { Body, Controller, Get, HttpCode, Post, Req, UseGuards } from '@nestjs/common';
 import type { Request } from 'express';
-import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
-import { EmailVerifiedGuard } from '../auth/guards/email-verified.guard';
-import type { JwtPayload } from '../auth/tokens/jwt-token.service';
-import { SafetyService } from './safety.service';
-import { SafetyReentryService } from './safety-reentry.service';
-import type { SafetyReentryBody } from './safety.dto';
+import { EmailVerifiedGuard, JwtAuthGuard, type JwtPayload } from '../../auth/auth.public';
+import { SafetyService } from '../services/safety.service';
+import { SafetyReentryService } from '../services/safety-reentry.service';
+import type { SafetyReentryBody } from '../dto/safety.dto';
 
 /**
  * Safety endpoints (contracts/safety.md, FR-019b context, Safety Matrix §9/§11).

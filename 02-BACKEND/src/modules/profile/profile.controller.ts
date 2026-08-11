@@ -1,9 +1,7 @@
 import { Body, Controller, Get, HttpCode, Put, Req, UseGuards } from '@nestjs/common';
 import type { Request } from 'express';
 import { ZodValidationPipe } from '../../common/validation/zod-validation.pipe';
-import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
-import { EmailVerifiedGuard } from '../auth/guards/email-verified.guard';
-import type { JwtPayload } from '../auth/tokens/jwt-token.service';
+import { EmailVerifiedGuard, JwtAuthGuard, type JwtPayload } from '../auth/auth.public';
 import { ProfileService } from './profile.service';
 import {
   putLanguageSchema,

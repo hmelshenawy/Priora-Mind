@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import { validateLlmPlanOutput } from '../../../../src/modules/coaching/utils/coaching-plan-validator';
-import type { GroundingBundle, LlmPlanOutput } from '../../../../src/modules/coaching/ports/coaching-llm.port';
+import type { GroundingBundle, LlmPlanOutput } from '../../../../src/modules/ai/ai.public';
 
 const bundle: GroundingBundle = {
   assessment: {

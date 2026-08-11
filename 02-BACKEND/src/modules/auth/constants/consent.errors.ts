@@ -1,5 +1,5 @@
 import { HttpException, HttpStatus } from '@nestjs/common';
-import type { VersionSet } from './consent.dto';
+import type { VersionSet } from '../dto/consent.dto';
 
 /**
  * Consent error codes (contracts/consent.md, Consent policy §12). Each carries a

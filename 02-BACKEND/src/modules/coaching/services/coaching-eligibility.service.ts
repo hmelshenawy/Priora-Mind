@@ -1,11 +1,13 @@
 import { Injectable } from '@nestjs/common';
-import { ConsentService } from '../../auth/consent.service';
-import { AssessmentResultService } from '../../assessment/services/assessment-result.service';
-import type { ScoredResultDto } from '../../assessment/dto/assessment.dto';
-import { OnboardingGuardService, type OnboardingGuardContext } from '../../profile/onboarding.guard';
-import { SafetyService } from '../../safety/safety.service';
+import { ConsentService } from '../../auth/auth.public';
+import {
+  AssessmentResultService,
+  ResultNotFoundException,
+  type ScoredResultDto,
+} from '../../assessment/assessment.public';
+import { OnboardingGuardService, type OnboardingGuardContext } from '../../profile/profile.public';
+import { SafetyService } from '../../safety/safety.public';
 import { PrismaService } from '../../../prisma/prisma.service';
-import { ResultNotFoundException } from '../../assessment/constants/assessment.errors';
 import { NoCurrentPlanException, SafetyHoldException } from '../constants/coaching.errors';
 
 type Db = Record<string, { [method: string]: (...args: unknown[]) => unknown }>;

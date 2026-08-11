@@ -1,8 +1,8 @@
 import { Injectable } from '@nestjs/common';
 import { ZodError } from 'zod';
 import { PrismaService } from '../../../prisma/prisma.service';
-import { SafetyService } from '../../safety/safety.service';
-import { SQ02_TRIGGER_CODES } from '../../safety/safety-definition';
+import { SafetyService } from '../../safety/safety.public';
+import { ProfileLifecycleService } from '../../profile/profile.public';
 import {
   ASSESSMENT_DEFINITION_V1,
   ASSESSMENT_DEFINITION_VERSION,
@@ -22,7 +22,6 @@ import {
 } from '../constants/assessment.errors';
 import { buildDefinitionResponse } from '../dto/assessment-definition-view';
 import { AssessmentAnswerStore } from './assessment-answer-store.service';
-import { AssessmentOnboardingService } from './assessment-onboarding.service';
 
 /**
  * Assessment lifecycle orchestration (FR-013/FR-014/FR-014a/FR-014b, contracts/
@@ -41,7 +40,7 @@ import { AssessmentOnboardingService } from './assessment-onboarding.service';
 export class AssessmentLifecycleService {
   constructor(
     private readonly prisma: PrismaService,
-    private readonly onboarding: AssessmentOnboardingService,
+    private readonly profileLifecycle: ProfileLifecycleService,
     private readonly safety: SafetyService,
     private readonly answers: AssessmentAnswerStore,
   ) {}
@@ -51,7 +50,7 @@ export class AssessmentLifecycleService {
   }
 
   async getAssessment(userId: string): Promise<AssessmentView> {
-    await this.onboarding.assertCanEnter(userId);
+    await this.profileLifecycle.assertCanEnterAssessment(userId);
     const assessment = await this.answers.upsertActive(userId);
 
     // US8 (FR-034, SC-007): corrupt/inconsistent-progress detection. If the active
@@ -115,11 +114,10 @@ export class AssessmentLifecycleService {
     questionId: string,
     body: unknown,
   ): Promise<SaveAnswerResponse> {
-    await this.onboarding.assertCanEnter(userId);
+    await this.profileLifecycle.assertCanEnterAssessment(userId);
     // US6: once in SAFETY_HOLD, no further answers may be saved (FR-019b). The
     // triggering SQ answer is saved before this point; subsequent saves are blocked.
-    const onboarding = await this.prisma.onboardingState.findFirst({ where: { userId } });
-    if (onboarding?.state === 'SAFETY_HOLD') throw new SafetyHoldException();
+    if (await this.profileLifecycle.isOnSafetyHold(userId)) throw new SafetyHoldException();
 
     const kind = kindForQuestionId(questionId);
     if (!kind) throw new QuestionNotFoundException();
@@ -131,7 +129,7 @@ export class AssessmentLifecycleService {
     // US6: SQ-02 is only accepted when SQ-01 ∈ {S1,S2,SX} (Safety §3, contracts).
     if (questionId === 'SQ-02') {
       const sq01 = await this.answers.storedSq01(assessment.id);
-      if (!sq01 || !SQ02_TRIGGER_CODES.includes(sq01)) {
+      if (!sq01 || !this.safety.requiresFollowUpForSq01(sq01)) {
         throw validationError(['code'], 'SQ-02 is only shown when SQ-01 indicates risk');
       }
     }
@@ -145,13 +143,13 @@ export class AssessmentLifecycleService {
         where: { id: assessment.id },
         data: { state: 'IN_PROGRESS', startedAt: now, lastActivityAt: now },
       });
-      await this.onboarding.transitionOnboarding(userId, ['ASSESSMENT_PENDING', 'ASSESSMENT_IN_PROGRESS'], 'ASSESSMENT_IN_PROGRESS', now);
+      await this.profileLifecycle.markAssessmentInProgress(userId, now);
     } else {
       await this.prisma.assessment.update({
         where: { id: assessment.id },
         data: { lastActivityAt: now },
       });
-      await this.touchOnboardingActivity(userId, now);
+      await this.profileLifecycle.touchOnboardingActivity(userId, now);
     }
 
     // US6 (FR-019a, Safety §4): run the safety classifier after a saved SAFETY answer.
@@ -175,12 +173,11 @@ export class AssessmentLifecycleService {
   }
 
   async restart(userId: string): Promise<void> {
-    await this.onboarding.assertCanEnter(userId);
+    await this.profileLifecycle.assertCanEnterAssessment(userId);
     // US6: restart is blocked while in SAFETY_HOLD — the user must use re-entry, not
     // restart, to leave SAFETY_HOLD (Safety §9, "client cannot override server safety
     // state" §10). Restart never clears historical SafetyEvaluations (contracts).
-    const onboarding = await this.prisma.onboardingState.findFirst({ where: { userId } });
-    if (onboarding?.state === 'SAFETY_HOLD') throw new SafetyHoldException();
+    if (await this.profileLifecycle.isOnSafetyHold(userId)) throw new SafetyHoldException();
     const assessment = await this.prisma.assessment.findFirst({ where: { userId } });
     if (!assessment || assessment.state === 'NOT_STARTED') return; // nothing to restart
     if (assessment.state === 'SCORED') throw new RestartNotAllowedException();
@@ -200,7 +197,7 @@ export class AssessmentLifecycleService {
         lastActivityAt: now,
       },
     });
-    await this.onboarding.transitionOnboarding(userId, ['ASSESSMENT_PENDING', 'ASSESSMENT_IN_PROGRESS'], 'ASSESSMENT_IN_PROGRESS', now);
+    await this.profileLifecycle.markAssessmentInProgress(userId, now);
   }
 
   // ─────────────────────────── helpers ───────────────────────────
@@ -240,15 +237,6 @@ export class AssessmentLifecycleService {
     }
   }
 
-  private async touchOnboardingActivity(userId: string, now: Date): Promise<void> {
-    const existing = await this.prisma.onboardingState.findFirst({ where: { userId } });
-    if (existing) {
-      await this.prisma.onboardingState.update({
-        where: { id: existing.id },
-        data: { lastActivityAt: now, updatedAt: now },
-      });
-    }
-  }
 }
 
 /** Throw a real ZodError (custom issue) so the global filter maps cross-question

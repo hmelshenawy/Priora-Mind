@@ -9,7 +9,6 @@ import { AssessmentLifecycleService } from './services/assessment-lifecycle.serv
 import { AssessmentResultService } from './services/assessment-result.service';
 import { AssessmentSubmitService } from './services/assessment-submit.service';
 import { ASSESSMENT_DELETION_PORT } from './ports/assessment-deletion.port';
-import { AssessmentOnboardingService } from './services/assessment-onboarding.service';
 import { ScoringService } from './services/scoring.service';
 
 /**
@@ -28,7 +27,6 @@ import { ScoringService } from './services/scoring.service';
   providers: [
     ScoringService,
     AssessmentAnswerStore,
-    AssessmentOnboardingService,
     AssessmentLifecycleService,
     AssessmentResultService,
     AssessmentSubmitService,

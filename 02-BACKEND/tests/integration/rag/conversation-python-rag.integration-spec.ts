@@ -1,5 +1,5 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
-import { ConversationRagApiClientService } from '../../../src/modules/conversations/rag/conversation-rag-client.service';
+import { RetrievalHttpClientService } from '../../../src/modules/retrieval/services/retrieval-http-client.service';
 
 describe('conversation backend to Python RAG integration contract', () => {
   beforeEach(() => {
@@ -39,7 +39,7 @@ describe('conversation backend to Python RAG integration contract', () => {
     });
     vi.stubGlobal('fetch', fetchMock);
 
-    const result = await new ConversationRagApiClientService().search(
+    const result = await new RetrievalHttpClientService().search(
       { question: 'grounding fixture', limit: 6, score_threshold: 0.7 },
       'corr-fixture',
     );

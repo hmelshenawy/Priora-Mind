@@ -1,6 +1,6 @@
 import { Injectable, Logger, NotFoundException } from '@nestjs/common';
 import { PrismaService } from '../../prisma/prisma.service';
-import { ConsentService } from '../auth/consent.service';
+import { ConsentService } from '../auth/auth.public';
 import {
   OnboardingGuardService,
   type OnboardingGuardContext,

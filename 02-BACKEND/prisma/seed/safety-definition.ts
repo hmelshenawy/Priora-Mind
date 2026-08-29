@@ -3,7 +3,7 @@
  *
  * The DB rows record that v1.0 is the active, immutable safety definition + copy;
  * their content mirrors the typed constants in
- * `src/modules/safety/safety-definition.ts` (SAFETY_QUESTIONS, SAFETY_COPY,
+ * `src/modules/safety/constants/safety-definition.ts` (SAFETY_QUESTIONS, SAFETY_COPY,
  * SAFETY_ACTIONS, APPROVED_RESOURCES, thresholds), which the application uses as
  * the behavioral source of truth for classification + copy resolution + the
  * definition endpoint + SQ answer validation. Used by the in-memory
@@ -27,7 +27,7 @@ import {
   DISTRESS_MIN_DOMAINS,
   MOOD_DOMAIN,
   SAFETY_QUESTIONS,
-} from '../../src/modules/safety/safety-definition';
+} from '../../src/modules/safety/constants/safety-definition';
 
 export interface SafetyDefinitionSeed {
   id: string;

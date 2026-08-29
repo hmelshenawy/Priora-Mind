@@ -1,0 +1,30 @@
+import { Injectable } from '@nestjs/common';
+import type { ConversationHistoryItem } from '../../ai/ai.public';
+import type { RetrievedChunk } from '../../retrieval/retrieval.public';
+import { CONVERSATION_SYSTEM_INSTRUCTIONS } from '../constants/conversation-system.prompt';
+
+export interface ConversationGroundedPrompt {
+  productInstructions: string[];
+  recentHistory: ConversationHistoryItem[];
+  currentMessage: string;
+  standaloneRetrievalQuery: string;
+  chunks: RetrievedChunk[];
+}
+
+@Injectable()
+export class ConversationPromptBuilder {
+  build(input: {
+    recentHistory: ConversationHistoryItem[];
+    currentMessage: string;
+    standaloneRetrievalQuery: string;
+    chunks: RetrievedChunk[];
+  }): ConversationGroundedPrompt {
+    return {
+      productInstructions: [...CONVERSATION_SYSTEM_INSTRUCTIONS],
+      recentHistory: input.recentHistory,
+      currentMessage: input.currentMessage,
+      standaloneRetrievalQuery: input.standaloneRetrievalQuery,
+      chunks: input.chunks,
+    };
+  }
+}

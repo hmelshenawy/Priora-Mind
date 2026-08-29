@@ -20,7 +20,7 @@ import { EMAIL_PORT } from '../../src/modules/auth/ports/email.port';
 import { FakeEmailAdapter } from '../../src/modules/auth/ports/fake-email.adapter';
 import { InMemoryPrisma } from '../helpers/in-memory-prisma';
 import { NOTICE_VERSION_V1 } from '../../prisma/seed/notice-versions';
-import { CURRENT_STATE_QUESTIONS } from '../../src/modules/assessment/assessment-definition';
+import { CURRENT_STATE_QUESTIONS } from '../../src/modules/assessment/constants/assessment-definition';
 
 const MS_PER_DAY = 24 * 60 * 60 * 1000;
 
@@ -52,7 +52,6 @@ describe('Scheduled retention-cleanup (e2e)', () => {
   // Fixed "now" so cutoffs are deterministic. Cutoffs: 7d (unverified), 30d (others).
   const NOW = new Date('2026-07-15T03:00:00Z');
   const UNVERIFIED_CUTOFF = new Date(NOW.getTime() - 7 * MS_PER_DAY);
-  const INACTIVITY_CUTOFF = new Date(NOW.getTime() - 30 * MS_PER_DAY);
 
   const auth = (t: string) => ({ Authorization: `Bearer ${t}` });
 
@@ -99,6 +98,12 @@ describe('Scheduled retention-cleanup (e2e)', () => {
     if (u) u.lastActivityAt = old;
     for (const o of prisma.onboardingStateStore.values()) if (o.userId === userId) o.lastActivityAt = old;
     for (const a of prisma.assessmentStore.values()) if (a.userId === userId) a.lastActivityAt = old;
+  }
+
+  function seedCoaching(userId: string) {
+    const plan = prisma.coachingPlan.create({ data: { userId, sourceAssessmentId: 'assessment-coaching', sourceResultId: `result-${userId}`, definitionVersion: '1.0', libraryVersion: '1.0', disclaimerVersion: '1.0', promptVersion: '1.0', generationStatus: 'READY', planStatus: 'COMPLETED', title: { en: 'Plan', ar: 'خطة' }, summary: { en: 'Summary', ar: 'ملخص' }, disclaimer: { en: 'Disclaimer', ar: 'تنبيه' } } });
+    prisma.coachingPlanGeneration.create({ data: { planId: plan.id, attempt: 1, provider: 'fake', modelId: 'fake', promptVersion: '1.0', sourceAssessmentId: 'assessment-coaching', sourceResultId: `result-${userId}`, definitionVersion: '1.0', libraryVersion: '1.0', disclaimerVersion: '1.0', status: 'READY', validationOutcome: { result: 'VALID', reasons: [] } } });
+    return plan.id;
   }
 
   beforeAll(async () => {
@@ -148,7 +153,7 @@ describe('Scheduled retention-cleanup (e2e)', () => {
   // ── unverified accounts: 7d cutoff ──────────────────────────────────
 
   it('unverified account older than 7d is deleted; newer than 7d is retained (Consent §8)', async () => {
-    const stale = await verifiedAccessToken('stale-unverified@test.dev');
+    await verifiedAccessToken('stale-unverified@test.dev');
     const staleId = [...prisma.userStore.values()].find((u) => u.email === 'stale-unverified@test.dev')!.id;
     // Re-register a second user but DO NOT verify (stays REGISTERED).
     await agent.post(`${AUTH}/register`).send({ email: 'fresh-unverified@test.dev', password: 'password123' });
@@ -190,7 +195,7 @@ describe('Scheduled retention-cleanup (e2e)', () => {
 
   it('verified pre-consent account inactive 31d is deleted; verified+consented 31d is retained (Consent §8)', async () => {
     // Pre-consent: verified, never consented, 31d inactive.
-    const preConsentToken = await verifiedAccessToken('preconsent@test.dev');
+    await verifiedAccessToken('preconsent@test.dev');
     const preConsentId = [...prisma.userStore.values()].find((u) => u.email === 'preconsent@test.dev')!.id;
     prisma.userStore.get(preConsentId)!.lastActivityAt = new Date(NOW.getTime() - 31 * MS_PER_DAY);
     expect(prisma.consentStore.size).toBe(0);
@@ -199,6 +204,7 @@ describe('Scheduled retention-cleanup (e2e)', () => {
     const consentedToken = await verifiedAccessToken('consented@test.dev');
     await fullyOnboard(consentedToken);
     const consentedId = [...prisma.userStore.values()].find((u) => u.email === 'consented@test.dev')!.id;
+    const planId = seedCoaching(consentedId);
     ageUser(consentedId, new Date(NOW.getTime() - 31 * MS_PER_DAY));
     expect(prisma.consentStore.size).toBe(1);
 
@@ -210,6 +216,10 @@ describe('Scheduled retention-cleanup (e2e)', () => {
     expect(prisma.consentStore.size).toBe(1);
     expect([...prisma.onboardingStateStore.values()].some((o) => o.userId === consentedId)).toBe(true);
     expect(prisma.assessmentResultStore.size).toBe(1);
+    expect(prisma.coachingPlanStore.has(planId)).toBe(true);
+    expect(prisma.coachingPlanGeneration.findMany({ where: { planId } })).toHaveLength(1);
+    const counts = [...prisma.deletionLogStore.values()][0].categoryCounts as { coaching: { deleted: number; errors: number } };
+    expect(counts.coaching).toEqual({ deleted: 0, errors: 0 });
   });
 
   // ── incomplete onboarding/assessment: 30d cutoff, completed retained ─
@@ -282,6 +292,43 @@ describe('Scheduled retention-cleanup (e2e)', () => {
     // The incomplete assessment + its answers are gone.
     expect([...prisma.assessmentStore.values()].some((x) => x.userId === aId)).toBe(false);
     expect(prisma.assessmentAnswerStore.size).toBe(0);
+  });
+
+  it('passes Assessment-owned expired candidate IDs to Safety-owned history deletion', async () => {
+    const token = await verifiedAccessToken('safety-retention@test.dev');
+    await agent
+      .post(`${ONB}/consent`)
+      .set(auth(token))
+      .send({
+        service_boundary_version: NOTICE_VERSION_V1.serviceBoundaryVersion,
+        terms_version: NOTICE_VERSION_V1.termsVersion,
+        privacy_notice_version: NOTICE_VERSION_V1.privacyNoticeVersion,
+        acknowledgments: { service_boundary: true, terms: true, privacy_notice: true },
+        consent_language_code: 'en',
+        product_channel_id: 'priora-mind-web',
+      });
+    await agent.put(`${ONB}/profile`).set(auth(token)).send({ language_code: 'en', timezone: 'UTC' });
+    await agent.put(`${A}/answers/AS-01`).set(auth(token)).send({ value: 2 });
+    const userId = [...prisma.userStore.values()].find((user) => user.email === 'safety-retention@test.dev')!.id;
+    const assessment = [...prisma.assessmentStore.values()].find((row) => row.userId === userId)!;
+    assessment.lastActivityAt = new Date(NOW.getTime() - 31 * MS_PER_DAY);
+    prisma.safetyEvaluation.create({
+      data: {
+        userId,
+        assessmentId: assessment.id,
+        definitionVersion: '1.0',
+        level: 'HIGH_RISK',
+        reasons: [],
+        triggerContext: 'per_answer',
+        isCurrent: true,
+        evaluatedAt: assessment.lastActivityAt,
+      },
+    });
+
+    await retention.runScheduledRetention(NOW);
+
+    expect(prisma.assessmentStore.has(assessment.id)).toBe(false);
+    expect([...prisma.safetyEvaluationStore.values()].some((row) => row.assessmentId === assessment.id)).toBe(false);
   });
 
   // ── idempotency ─────────────────────────────────────────────────────

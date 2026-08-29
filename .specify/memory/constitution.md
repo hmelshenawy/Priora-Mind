@@ -1,5 +1,7 @@
 <!--
 Sync Impact Report
+- Version change: 1.0.0 → 1.1.0
+- Added enforceable modular-boundary rules and the backend boundary-check gate.
 - Version change: (uninitialized template) → 1.0.0
 - Initial ratification: all template placeholders resolved with concrete Priora Mind values.
 - Principles filled (new — first adoption):
@@ -226,6 +228,15 @@ Code MUST be clean, cohesive, well-organized, testable, understandable, and easy
 - Business logic MUST remain outside controllers, route handlers, UI components, infrastructure adapters, database adapters, and provider-specific integrations.
 - Domain and application code MUST depend on contracts and abstractions rather than concrete infrastructure implementations.
 - Module boundaries defined in `SAD.md` MUST be respected.
+- Module internals are private by default. Cross-module production access MUST use
+  the owner's public entry point or a justified owner-defined port.
+- A normal exported service is the default public capability; ports require a real
+  provider, substitution, or deletion-boundary reason.
+- A module MUST NOT write another module's persisted state.
+- Each backend module's `module.ts` plus public entry point define its intentional surface.
+- Circular dependencies and `forwardRef()` shortcuts require explicit architectural approval.
+- AI provider ownership and Retrieval transport/configuration MUST remain inside
+  their infrastructure modules and MUST NOT leak into consumer domains.
 - Shared code MUST NOT become an unstructured dumping ground.
 - Duplication MUST be removed when a stable shared abstraction is clear.
 - Speculative abstractions and premature generalization are prohibited.
@@ -234,6 +245,10 @@ Code MUST be clean, cohesive, well-organized, testable, understandable, and easy
 - Functions and methods SHOULD remain small and focused.
 - Public contracts and complex business rules MUST be documented where their intent is not evident from the code.
 - Refactoring MUST preserve behavior through relevant automated tests.
+- All files must not exceed 300 lines
+- avoid overengieeering. simplicty is important and mandatory
+- if classes not required do not use or create classes
+- single source of truth.
 
 #### File-size rule
 
@@ -267,6 +282,20 @@ Before a feature is considered complete, affected code MUST:
 Rationale: Priora Mind contains sensitive and evolving workflows. Clean boundaries and controlled file size reduce regression risk and keep the system maintainable.
 
 ---
+#### Simplicity and proportionality
+
+- The simplest design that fully satisfies the current approved requirements MUST be preferred.
+- Complexity MUST be proportional to current, demonstrated needs—not hypothetical future requirements.
+- A new abstraction, interface, protocol, factory, service layer, or wrapper MUST NOT be introduced unless it:
+  - has at least two current concrete uses or implementations; or
+  - isolates a genuine external boundary; or
+  - materially improves testability of business-critical behavior.
+- One implementation does not automatically require an interface.
+- Pass-through layers that add no validation, transformation, policy, orchestration, or boundary protection are prohibited.
+- Local synchronous workflows MUST remain synchronous unless concurrency solves a measured requirement.
+- Timeouts, retries, caching, queues, and background processing MUST only be introduced for a documented failure mode or performance requirement.
+- Testability MUST NOT introduce unnecessary production abstractions. Test-only fakes, fixtures, and helpers SHOULD remain in test code.
+- Existing abstractions MUST NOT be preserved solely for possible future use.
 
 ### IX. Testing and Verifiable Behavior
 
@@ -380,6 +409,8 @@ Rationale: MVP discipline reduces delivery risk while preserving the controls re
 - Request validation and response contracts MUST be explicit.
 - Protected operations MUST enforce authorization in the backend.
 - External-provider failures MUST have defined timeout, retry, and fallback behavior where appropriate.
+- Backend validation MUST run `npm -w 02-BACKEND run check:boundaries` in addition
+  to tests, lint, type checking, and build validation.
 
 ### Frontend
 
@@ -538,6 +569,6 @@ The Constitution follows semantic versioning:
 - Repeated exceptions indicate an architectural issue and MUST trigger review.
 - Existing non-compliance discovered during feature work MUST be documented and addressed according to its risk.
 
-**Version**: 1.0.0  
+**Version**: 1.1.0
 **Ratified**: 2026-07-29  
-**Last Amended**: 2026-07-29
+**Last Amended**: 2026-08-10

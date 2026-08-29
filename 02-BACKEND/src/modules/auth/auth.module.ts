@@ -1,15 +1,17 @@
 import { Module } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { AuthCoreModule } from './auth-core.module';
-import { AuthController } from './auth.controller';
-import { AuthService } from './auth.service';
-import { ConsentController } from './consent.controller';
-import { ConsentService } from './consent.service';
-import { AuthDeletionService } from './auth-deletion.service';
+import { AuthController } from './controllers/auth.controller';
+import { AuthService } from './services/auth.service';
+import { ConsentController } from './controllers/consent.controller';
+import { ConsentService } from './services/consent.service';
+import { AuthDeletionService } from './services/auth-deletion.service';
 import { AUTH_DELETION_PORT } from './ports/auth-deletion.port';
 import { EMAIL_PORT } from './ports/email.port';
 import { FakeEmailAdapter } from './ports/fake-email.adapter';
 import { HttpEmailProviderAdapter } from './ports/http-email.adapter';
+import { JwtAuthGuard } from './guards/jwt-auth.guard';
+import { EmailVerifiedGuard } from './guards/email-verified.guard';
 
 /**
  * Auth feature module (US1 + US2). Composes the AuthCore framework (token
@@ -26,6 +28,8 @@ import { HttpEmailProviderAdapter } from './ports/http-email.adapter';
   providers: [
     AuthService,
     ConsentService,
+    JwtAuthGuard,
+    EmailVerifiedGuard,
     {
       provide: EMAIL_PORT,
       useFactory: (config: ConfigService) =>
@@ -37,6 +41,13 @@ import { HttpEmailProviderAdapter } from './ports/http-email.adapter';
     AuthDeletionService,
     { provide: AUTH_DELETION_PORT, useExisting: AuthDeletionService },
   ],
-  exports: [AuthService, ConsentService, AuthDeletionService, AUTH_DELETION_PORT, EMAIL_PORT],
+  exports: [
+    AuthService,
+    ConsentService,
+    JwtAuthGuard,
+    EmailVerifiedGuard,
+    AUTH_DELETION_PORT,
+    EMAIL_PORT,
+  ],
 })
 export class AuthModule {}

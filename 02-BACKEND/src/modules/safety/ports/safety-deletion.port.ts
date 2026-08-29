@@ -15,12 +15,6 @@
  * research D7) — no levels, reasons, or answers are ever emitted to logs.
  */
 
-export interface SafetyCutoffs {
-  /** Delete safety evaluations tied to incomplete assessments whose lastActivityAt
-   * is before this instant (Consent §8). */
-  incompleteBefore: Date;
-}
-
 export interface DeletionCategoryCounters {
   deleted: number;
   errors: number;
@@ -29,8 +23,8 @@ export interface DeletionCategoryCounters {
 export const SAFETY_DELETION_PORT = Symbol('SAFETY_DELETION_PORT');
 
 export interface SafetyDeletionPort {
-  /** Scheduled retention: safety evaluations tied to expired incomplete assessments. */
-  deleteExpired(cutoffs: SafetyCutoffs): Promise<DeletionCategoryCounters>;
+  /** Scheduled retention: delete evaluations for Assessment-owned candidate IDs. */
+  deleteExpiredForAssessmentIds(assessmentIds: string[]): Promise<DeletionCategoryCounters>;
   /** Account deletion (Consent §9): remove a user's safety evaluation history. */
   deleteSafetyForUsers(userIds: string[]): Promise<DeletionCategoryCounters>;
 }

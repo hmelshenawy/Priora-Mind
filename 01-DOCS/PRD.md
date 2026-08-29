@@ -134,15 +134,15 @@ The approved question set, scale, scoring formula, result bands, and lifecycleru
 
 Coaching Plan
 
-Generate AI coaching plan
+Generate an AI-personalized coaching plan as a core product capability, using a hybrid deterministic + LLM flow: deterministic product rules own eligibility, safety, grounding, validation, lifecycle, privacy, and persistence, while the LLM synthesizes bounded, bilingual, non-clinical plan copy from approved sources.
 
 View plan
 
-Activate plan
+Activate plan through explicit user acceptance of a generated `PROPOSED` plan (`PROPOSED` -> `ACTIVE`).
 
-Pause plan
+Pause and richer lifecycle controls are deferred beyond the MVP.
 
-Complete plan
+Complete plan through minimal automatic lifecycle behavior after acceptance (`ACTIVE` <-> `COMPLETED`) based on action progress.
 
 Goals
 
@@ -152,9 +152,9 @@ Track progress
 
 Exercises
 
-View exercises
+View action steps, which fulfill the exercise role for the MVP coaching plan.
 
-Complete exercises
+Complete action steps to track plan progress.
 
 Sessions
 

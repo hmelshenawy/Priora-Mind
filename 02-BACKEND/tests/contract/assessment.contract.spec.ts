@@ -12,12 +12,12 @@ import { AllExceptionsFilter } from '../../src/common/filters/all-exceptions.fil
 import { AuthModule } from '../../src/modules/auth/auth.module';
 import { ProfileModule } from '../../src/modules/profile/profile.module';
 import { AssessmentModule } from '../../src/modules/assessment/assessment.module';
-import { AssessmentDeletionService } from '../../src/modules/assessment/assessment-deletion.service';
+import { AssessmentDeletionService } from '../../src/modules/assessment/services/assessment-deletion.service';
 import { EMAIL_PORT } from '../../src/modules/auth/ports/email.port';
 import { FakeEmailAdapter } from '../../src/modules/auth/ports/fake-email.adapter';
 import { InMemoryPrisma } from '../helpers/in-memory-prisma';
 import { NOTICE_VERSION_V1 } from '../../prisma/seed/notice-versions';
-import { CURRENT_STATE_QUESTIONS } from '../../src/modules/assessment/assessment-definition';
+import { CURRENT_STATE_QUESTIONS } from '../../src/modules/assessment/constants/assessment-definition';
 
 /**
  * T044 — Assessment contract (contracts/assessment.md, FR-013..FR-016, FR-018a).

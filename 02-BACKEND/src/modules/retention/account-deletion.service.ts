@@ -1,13 +1,23 @@
 import { Injectable, Logger, Inject } from '@nestjs/common';
 import { PrismaService } from '../../prisma/prisma.service';
 import { toSafeLogContext } from '../../common/redact';
-import { AUTH_DELETION_PORT, type AuthDeletionPort } from '../auth/ports/auth-deletion.port';
-import { PROFILE_DELETION_PORT, type ProfileDeletionPort } from '../profile/ports/profile-deletion.port';
+import { AUTH_DELETION_PORT, type AuthDeletionPort } from '../auth/auth.public';
+import {
+  PROFILE_DELETION_PORT,
+  type ProfileDeletionPort,
+} from '../profile/profile.public';
 import {
   ASSESSMENT_DELETION_PORT,
   type AssessmentDeletionPort,
-} from '../assessment/ports/assessment-deletion.port';
-import { SAFETY_DELETION_PORT, type SafetyDeletionPort } from '../safety/ports/safety-deletion.port';
+} from '../assessment/assessment.public';
+import {
+  COACHING_DELETION_PORT,
+  type CoachingDeletionPort,
+} from '../coaching/coaching.public';
+import {
+  SAFETY_DELETION_PORT,
+  type SafetyDeletionPort,
+} from '../safety/safety.public';
 
 /**
  * User-initiated account deletion (Consent policy §9, FR-031, research D10).
@@ -44,6 +54,7 @@ export class AccountDeletionService {
     @Inject(AUTH_DELETION_PORT) private readonly auth: AuthDeletionPort,
     @Inject(PROFILE_DELETION_PORT) private readonly profile: ProfileDeletionPort,
     @Inject(ASSESSMENT_DELETION_PORT) private readonly assessment: AssessmentDeletionPort,
+    @Inject(COACHING_DELETION_PORT) private readonly coaching: CoachingDeletionPort,
     @Inject(SAFETY_DELETION_PORT) private readonly safety: SafetyDeletionPort,
   ) {}
 
@@ -57,14 +68,9 @@ export class AccountDeletionService {
     const start = new Date();
 
     // Idempotent no-op: account already fully gone (prior completed request).
-    const user = await this.prisma.userAccount.findUnique({ where: { id: userId } });
-    if (!user) {
+    const accountExists = await this.auth.prepareAccountDeletion(userId, now);
+    if (!accountExists) {
       return { status: 'completed', confirmation_id: confirmationId, completed: true };
-    }
-
-    // 1) Block new processing on acceptance BEFORE touching any data (Consent §9).
-    if (user.deletedAt === null) {
-      await this.prisma.userAccount.update({ where: { id: userId }, data: { deletedAt: now } });
     }
 
     // 2) Per-module deletion in referential order. Each port is idempotent.
@@ -72,9 +78,18 @@ export class AccountDeletionService {
       assessment: await this.run('assessment', confirmationId, () =>
         this.assessment.deleteAssessmentForUsers([userId]),
       ),
-      safety: await this.run('safety', confirmationId, () => this.safety.deleteSafetyForUsers([userId])),
-      profile: await this.run('profile', confirmationId, () => this.profile.deleteProfileForUsers([userId])),
-      consent: await this.run('consent', confirmationId, () => this.auth.deleteConsentForUsers([userId])),
+      coaching: await this.run('coaching', confirmationId, () =>
+        this.coaching.deleteCoachingForUsers([userId]),
+      ),
+      safety: await this.run('safety', confirmationId, () =>
+        this.safety.deleteSafetyForUsers([userId]),
+      ),
+      profile: await this.run('profile', confirmationId, () =>
+        this.profile.deleteProfileForUsers([userId]),
+      ),
+      consent: await this.run('consent', confirmationId, () =>
+        this.auth.deleteConsentForUsers([userId]),
+      ),
       // `auth` (the account row) is deleted last only on full success below.
       auth: { deleted: 0, errors: 0 },
     };
@@ -83,9 +98,13 @@ export class AccountDeletionService {
     let status: 'completed' | 'partial';
     if (failed === 0) {
       // 3) All stores confirmed → hard-delete the account row (cascades tokens + any
-      //    leftover). The per-module counts are the source of truth; this just removes
+      //    leftover). Conversation rows are user-owned with FK cascade, so Spec 004
+      //    conversations/messages/sources are removed when the identity row is deleted.
+      //    The per-module counts are the source of truth; this just removes
       //    the identity row.
-      counts.auth = await this.run('auth', confirmationId, () => this.auth.deleteAccountForUsers([userId]));
+      counts.auth = await this.run('auth', confirmationId, () =>
+        this.auth.deleteAccountForUsers([userId]),
+      );
       status = counts.auth.errors === 0 ? 'completed' : 'partial';
     } else {
       // Partial failure → keep the account (deletedAt set, access disabled). Retry
@@ -126,7 +145,7 @@ export class AccountDeletionService {
   ): Promise<CategoryCounters> {
     try {
       return await fn();
-    } catch (err) {
+    } catch {
       this.logger.warn(
         toSafeLogContext({ window, category, deleted_count: 0, error_count: 1, run_ms: 0 }),
       );
@@ -142,6 +161,7 @@ type AccountCategoryCounts = {
   auth: CategoryCounters;
   profile: CategoryCounters;
   assessment: CategoryCounters;
+  coaching: CategoryCounters;
   safety: CategoryCounters;
   consent: CategoryCounters;
 };
@@ -152,8 +172,22 @@ export type AccountDeletionOutcome = {
 };
 
 function sumErrors(c: AccountCategoryCounts): number {
-  return c.auth.errors + c.profile.errors + c.assessment.errors + c.safety.errors + c.consent.errors;
+  return (
+    c.auth.errors +
+    c.profile.errors +
+    c.assessment.errors +
+    c.coaching.errors +
+    c.safety.errors +
+    c.consent.errors
+  );
 }
 function totalCounts(c: AccountCategoryCounts): number {
-  return c.auth.deleted + c.profile.deleted + c.assessment.deleted + c.safety.deleted + c.consent.deleted;
+  return (
+    c.auth.deleted +
+    c.profile.deleted +
+    c.assessment.deleted +
+    c.coaching.deleted +
+    c.safety.deleted +
+    c.consent.deleted
+  );
 }

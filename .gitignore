@@ -10,6 +10,13 @@ build/
 out/
 *.tsbuildinfo
 
+# Python
+__pycache__/
+*.pyc
+.venv/
+venv/
+*.egg-info/
+
 # Logs
 *.log
 logs/
@@ -25,6 +32,7 @@ pnpm-debug.log*
 *.local
 
 # Testing
+.pytest_cache/
 coverage/
 .nyc_output/
 test-results/

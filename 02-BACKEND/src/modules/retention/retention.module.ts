@@ -2,6 +2,7 @@ import { Module } from '@nestjs/common';
 import { AuthModule } from '../auth/auth.module';
 import { ProfileModule } from '../profile/profile.module';
 import { AssessmentModule } from '../assessment/assessment.module';
+import { CoachingModule } from '../coaching/coaching.module';
 import { SafetyModule } from '../safety/safety.module';
 import { AccountDeletionController } from './account-deletion.controller';
 import { AccountDeletionService } from './account-deletion.service';
@@ -27,9 +28,8 @@ import { RetentionService } from './retention.service';
  * registers `runScheduledRetention` with the scheduler.
  */
 @Module({
-  imports: [AuthModule, ProfileModule, AssessmentModule, SafetyModule],
+  imports: [AuthModule, ProfileModule, AssessmentModule, CoachingModule, SafetyModule],
   controllers: [AccountDeletionController],
   providers: [RetentionService, AccountDeletionService],
-  exports: [RetentionService, AccountDeletionService],
 })
 export class RetentionModule {}

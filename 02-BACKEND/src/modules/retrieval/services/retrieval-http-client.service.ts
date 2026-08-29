@@ -9,6 +9,15 @@ export class RetrievalHttpClientService implements RetrievalClientPort {
   private readonly timeoutMs = Number(process.env.RAG_TIMEOUT_MS ?? '5000');
 
   async search(request: RetrievalSearchRequest, correlationId: string): Promise<RetrievalSearchResult> {
+
+    const startedAt = Date.now();
+
+    console.log('RAG start', {
+    correlationId,
+    timeoutMs: this.timeoutMs,
+    baseUrl: this.baseUrl,
+  });
+
     if (!this.baseUrl || !this.serviceToken) return this.unavailable(correlationId);
     const controller = new AbortController();
     const timer = setTimeout(() => controller.abort(), this.timeoutMs);
@@ -23,9 +32,20 @@ export class RetrievalHttpClientService implements RetrievalClientPort {
         body: JSON.stringify(request),
         signal: controller.signal,
       });
+      console.log('RAG response received', {
+    correlationId,
+    elapsedMs: Date.now() - startedAt,
+    status: response.status,
+    });
       if (response.status === 401) return { ...this.unavailable(correlationId), errorCode: 'RAG_UNAUTHORIZED' };
       if (!response.ok) return this.unavailable(correlationId);
       const body = (await response.json()) as { results?: unknown };
+
+      console.log('RAG body parsed', {
+  correlationId,
+  elapsedMs: Date.now() - startedAt,
+});
+
       if (!Array.isArray(body.results)) return this.invalid(correlationId);
       const chunks = body.results.filter(this.isChunk);
       if (chunks.length !== body.results.length) return this.invalid(correlationId);
